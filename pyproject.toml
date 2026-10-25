@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-analysis-system"
+version = "0.2.0"
+description = "A desktop research data analysis and reporting application"
+requires-python = ">=3.11,<3.14"
+
+[project.scripts]
+research-analysis = "app.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

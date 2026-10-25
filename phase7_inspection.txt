@@ -1,0 +1,4922 @@
+﻿RESEARCH ANALYSIS SYSTEM - PHASE 7 INSPECTION
+Generated: 10/11/2026 11:51:49
+
+========== 1. PROJECT STRUCTURE ==========
+
+Mode   Length Name                  
+----   ------ ----                  
+d-----        app                   
+d-----        projects              
+d-----        tests                 
+-a---- 0      gitignore             
+-a---- 127    phase7_inspection.txt 
+-a---- 0      README.md             
+-a---- 93     requirements.txt      
+-a---- 1136   test_research_data.csv
+
+
+
+app\data
+app\main.py
+app\report
+app\utils
+app\database\database.py
+app\database\research_analysis.db
+app\models\dataset.py
+app\models\project.py
+app\statistics\data_cleaner.py
+app\statistics\descriptive_statistics.py
+app\statistics\variable_inspector.py
+app\ui\data_cleaning_dialog.py
+app\ui\data_page.py
+app\ui\main_window.py
+app\ui\projects_page.py
+app\ui\project_dialog.py
+tests\test_descriptive_statistics.py
+tests\test_general_datasets.py
+
+========== 2. PYTHON AND DEPENDENCIES ==========
+Python 3.13.7
+Name: PySide6
+Version: 6.11.2
+Summary: Python bindings for the Qt cross-platform application and UI framework
+Home-page: https://pyside.org
+Author: 
+Author-email: Qt for Python Team <pyside@qt-project.org>
+License: LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+Location: C:\Users\Smarprex Telecom\OneDrive\Desktop\research_analysis\.venv\Lib\site-packages
+Requires: PySide6_Addons, PySide6_Essentials, shiboken6
+Required-by: 
+---
+Name: pandas
+Version: 3.0.6
+Summary: Powerful data structures for data analysis, time series, and statistics
+Home-page: https://pandas.pydata.org
+Author: 
+Author-email: The Pandas Development Team <pandas-dev@python.org>
+License: BSD 3-Clause License
+
+ Copyright (c) 2008-2011, AQR Capital Management, LLC, Lambda Foundry, Inc. and PyData Development Team
+ All rights reserved.
+
+ Copyright (c) 2011-2026, Open source contributors.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+ * Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Location: C:\Users\Smarprex Telecom\OneDrive\Desktop\research_analysis\.venv\Lib\site-packages
+Requires: numpy, python-dateutil, tzdata
+Required-by: formulaic, seaborn, statsmodels
+---
+Name: scipy
+Version: 1.18.1
+Summary: Fundamental algorithms for scientific computing in Python
+Home-page: https://scipy.org/
+Author: 
+Author-email: 
+License: Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+ 2. Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials provided
+    with the distribution.
+
+ 3. Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ ----
+
+
+ ----
+
+ This binary distribution of SciPy can also bundle the following software
+ (depending on the build):
+
+
+ Name: OpenBLAS
+ Files: scipy.libs\libscipy_openblas*.dll
+ Description: bundled as a dynamically linked library
+ Availability: https://github.com/OpenMathLib/OpenBLAS/
+ License: BSD-3-Clause
+   Copyright (c) 2011-2014, The OpenBLAS Project
+   All rights reserved.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+
+      1. Redistributions of source code must retain the above copyright
+         notice, this list of conditions and the following disclaimer.
+
+      2. Redistributions in binary form must reproduce the above copyright
+         notice, this list of conditions and the following disclaimer in
+         the documentation and/or other materials provided with the
+         distribution.
+      3. Neither the name of the OpenBLAS project nor the names of 
+         its contributors may be used to endorse or promote products 
+         derived from this software without specific prior written 
+         permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+   USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+ Name: LAPACK
+ Files: scipy.libs\libscipy_openblas*.dll
+ Description: bundled in OpenBLAS
+ Availability: https://github.com/OpenMathLib/OpenBLAS/
+ License: BSD-3-Clause-Open-MPI
+   Copyright (c) 1992-2013 The University of Tennessee and The University
+                           of Tennessee Research Foundation.  All rights
+                           reserved.
+   Copyright (c) 2000-2013 The University of California Berkeley. All
+                           rights reserved.
+   Copyright (c) 2006-2013 The University of Colorado Denver.  All rights
+                           reserved.
+
+   $COPYRIGHT$
+
+   Additional copyrights may follow
+
+   $HEADER$
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+
+   - Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+   - Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer listed
+     in this license in the documentation and/or other materials
+     provided with the distribution.
+
+   - Neither the name of the copyright holders nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+   The copyright holders provide no reassurances that the source code
+   provided does not infringe any patent, copyright, or any other
+   intellectual property rights of third parties.  The copyright holders
+   disclaim any liability to any recipient for claims brought against
+   recipient by any third party for infringement of that parties
+   intellectual property rights.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+ Name: GCC runtime library
+ Files: scipy.libs\libscipy_openblas*.dll
+ Description: statically linked to files compiled with gcc
+ Availability: https://gcc.gnu.org/git/?p=gcc.git;a=tree;f=libgfortran
+ License: GPL-3.0-or-later WITH GCC-exception-3.1
+   Copyright (C) 2002-2017 Free Software Foundation, Inc.
+
+   Libgfortran is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3, or (at your option)
+   any later version.
+
+   Libgfortran is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   Under Section 7 of GPL version 3, you are granted additional
+   permissions described in the GCC Runtime Library Exception, version
+   3.1, as published by the Free Software Foundation.
+
+   You should have received a copy of the GNU General Public License and
+   a copy of the GCC Runtime Library Exception along with this program;
+   see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+   <http://www.gnu.org/licenses/>.
+
+
+ ----
+
+ Full text of license texts referred to above follows (that they are
+ listed below does not necessarily imply the conditions apply to the
+ present binary release):
+
+ ----
+
+ GCC RUNTIME LIBRARY EXCEPTION
+
+ Version 3.1, 31 March 2009
+
+ Copyright (C) 2009 Free Software Foundation, Inc. <http://fsf.org/>
+
+ Everyone is permitted to copy and distribute verbatim copies of this
+ license document, but changing it is not allowed.
+
+ This GCC Runtime Library Exception ("Exception") is an additional
+ permission under section 7 of the GNU General Public License, version
+ 3 ("GPLv3"). It applies to a given file (the "Runtime Library") that
+ bears a notice placed by the copyright holder of the file stating that
+ the file is governed by GPLv3 along with this Exception.
+
+ When you use GCC to compile a program, GCC may combine portions of
+ certain GCC header files and runtime libraries with the compiled
+ program. The purpose of this Exception is to allow compilation of
+ non-GPL (including proprietary) programs to use, in this way, the
+ header files and runtime libraries covered by this Exception.
+
+ 0. Definitions.
+
+ A file is an "Independent Module" if it either requires the Runtime
+ Library for execution after a Compilation Process, or makes use of an
+ interface provided by the Runtime Library, but is not otherwise based
+ on the Runtime Library.
+
+ "GCC" means a version of the GNU Compiler Collection, with or without
+ modifications, governed by version 3 (or a specified later version) of
+ the GNU General Public License (GPL) with the option of using any
+ subsequent versions published by the FSF.
+
+ "GPL-compatible Software" is software whose conditions of propagation,
+ modification and use would permit combination with GCC in accord with
+ the license of GCC.
+
+ "Target Code" refers to output from any compiler for a real or virtual
+ target processor architecture, in executable form or suitable for
+ input to an assembler, loader, linker and/or execution
+ phase. Notwithstanding that, Target Code does not include data in any
+ format that is used as a compiler intermediate representation, or used
+ for producing a compiler intermediate representation.
+
+ The "Compilation Process" transforms code entirely represented in
+ non-intermediate languages designed for human-written code, and/or in
+ Java Virtual Machine byte code, into Target Code. Thus, for example,
+ use of source code generators and preprocessors need not be considered
+ part of the Compilation Process, since the Compilation Process can be
+ understood as starting with the output of the generators or
+ preprocessors.
+
+ A Compilation Process is "Eligible" if it is done using GCC, alone or
+ with other GPL-compatible software, or if it is done without using any
+ work based on GCC. For example, using non-GPL-compatible Software to
+ optimize any GCC intermediate representations would not qualify as an
+ Eligible Compilation Process.
+
+ 1. Grant of Additional Permission.
+
+ You have permission to propagate a work of Target Code formed by
+ combining the Runtime Library with Independent Modules, even if such
+ propagation would otherwise violate the terms of GPLv3, provided that
+ all Target Code was generated by Eligible Compilation Processes. You
+ may then convey such a combination under terms of your choice,
+ consistent with the licensing of the Independent Modules.
+
+ 2. No Weakening of GCC Copyleft.
+
+ The availability of this Exception does not imply any general
+ presumption that third-party software is unaffected by the copyleft
+ requirements of the license of GCC.
+
+ ----
+
+                     GNU GENERAL PUBLIC LICENSE
+                        Version 3, 29 June 2007
+
+  Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
+  Everyone is permitted to copy and distribute verbatim copies
+  of this license document, but changing it is not allowed.
+
+                             Preamble
+
+   The GNU General Public License is a free, copyleft license for
+ software and other kinds of works.
+
+   The licenses for most software and other practical works are designed
+ to take away your freedom to share and change the works.  By contrast,
+ the GNU General Public License is intended to guarantee your freedom to
+ share and change all versions of a program--to make sure it remains free
+ software for all its users.  We, the Free Software Foundation, use the
+ GNU General Public License for most of our software; it applies also to
+ any other work released this way by its authors.  You can apply it to
+ your programs, too.
+
+   When we speak of free software, we are referring to freedom, not
+ price.  Our General Public Licenses are designed to make sure that you
+ have the freedom to distribute copies of free software (and charge for
+ them if you wish), that you receive source code or can get it if you
+ want it, that you can change the software or use pieces of it in new
+ free programs, and that you know you can do these things.
+
+   To protect your rights, we need to prevent others from denying you
+ these rights or asking you to surrender the rights.  Therefore, you have
+ certain responsibilities if you distribute copies of the software, or if
+ you modify it: responsibilities to respect the freedom of others.
+
+   For example, if you distribute copies of such a program, whether
+ gratis or for a fee, you must pass on to the recipients the same
+ freedoms that you received.  You must make sure that they, too, receive
+ or can get the source code.  And you must show them these terms so they
+ know their rights.
+
+   Developers that use the GNU GPL protect your rights with two steps:
+ (1) assert copyright on the software, and (2) offer you this License
+ giving you legal permission to copy, distribute and/or modify it.
+
+   For the developers' and authors' protection, the GPL clearly explains
+ that there is no warranty for this free software.  For both users' and
+ authors' sake, the GPL requires that modified versions be marked as
+ changed, so that their problems will not be attributed erroneously to
+ authors of previous versions.
+
+   Some devices are designed to deny users access to install or run
+ modified versions of the software inside them, although the manufacturer
+ can do so.  This is fundamentally incompatible with the aim of
+ protecting users' freedom to change the software.  The systematic
+ pattern of such abuse occurs in the area of products for individuals to
+ use, which is precisely where it is most unacceptable.  Therefore, we
+ have designed this version of the GPL to prohibit the practice for those
+ products.  If such problems arise substantially in other domains, we
+ stand ready to extend this provision to those domains in future versions
+ of the GPL, as needed to protect the freedom of users.
+
+   Finally, every program is threatened constantly by software patents.
+ States should not allow patents to restrict development and use of
+ software on general-purpose computers, but in those that do, we wish to
+ avoid the special danger that patents applied to a free program could
+ make it effectively proprietary.  To prevent this, the GPL assures that
+ patents cannot be used to render the program non-free.
+
+   The precise terms and conditions for copying, distribution and
+ modification follow.
+
+                        TERMS AND CONDITIONS
+
+   0. Definitions.
+
+   "This License" refers to version 3 of the GNU General Public License.
+
+   "Copyright" also means copyright-like laws that apply to other kinds of
+ works, such as semiconductor masks.
+
+   "The Program" refers to any copyrightable work licensed under this
+ License.  Each licensee is addressed as "you".  "Licensees" and
+ "recipients" may be individuals or organizations.
+
+   To "modify" a work means to copy from or adapt all or part of the work
+ in a fashion requiring copyright permission, other than the making of an
+ exact copy.  The resulting work is called a "modified version" of the
+ earlier work or a work "based on" the earlier work.
+
+   A "covered work" means either the unmodified Program or a work based
+ on the Program.
+
+   To "propagate" a work means to do anything with it that, without
+ permission, would make you directly or secondarily liable for
+ infringement under applicable copyright law, except executing it on a
+ computer or modifying a private copy.  Propagation includes copying,
+ distribution (with or without modification), making available to the
+ public, and in some countries other activities as well.
+
+   To "convey" a work means any kind of propagation that enables other
+ parties to make or receive copies.  Mere interaction with a user through
+ a computer network, with no transfer of a copy, is not conveying.
+
+   An interactive user interface displays "Appropriate Legal Notices"
+ to the extent that it includes a convenient and prominently visible
+ feature that (1) displays an appropriate copyright notice, and (2)
+ tells the user that there is no warranty for the work (except to the
+ extent that warranties are provided), that licensees may convey the
+ work under this License, and how to view a copy of this License.  If
+ the interface presents a list of user commands or options, such as a
+ menu, a prominent item in the list meets this criterion.
+
+   1. Source Code.
+
+   The "source code" for a work means the preferred form of the work
+ for making modifications to it.  "Object code" means any non-source
+ form of a work.
+
+   A "Standard Interface" means an interface that either is an official
+ standard defined by a recognized standards body, or, in the case of
+ interfaces specified for a particular programming language, one that
+ is widely used among developers working in that language.
+
+   The "System Libraries" of an executable work include anything, other
+ than the work as a whole, that (a) is included in the normal form of
+ packaging a Major Component, but which is not part of that Major
+ Component, and (b) serves only to enable use of the work with that
+ Major Component, or to implement a Standard Interface for which an
+ implementation is available to the public in source code form.  A
+ "Major Component", in this context, means a major essential component
+ (kernel, window system, and so on) of the specific operating system
+ (if any) on which the executable work runs, or a compiler used to
+ produce the work, or an object code interpreter used to run it.
+
+   The "Corresponding Source" for a work in object code form means all
+ the source code needed to generate, install, and (for an executable
+ work) run the object code and to modify the work, including scripts to
+ control those activities.  However, it does not include the work's
+ System Libraries, or general-purpose tools or generally available free
+ programs which are used unmodified in performing those activities but
+ which are not part of the work.  For example, Corresponding Source
+ includes interface definition files associated with source files for
+ the work, and the source code for shared libraries and dynamically
+ linked subprograms that the work is specifically designed to require,
+ such as by intimate data communication or control flow between those
+ subprograms and other parts of the work.
+
+   The Corresponding Source need not include anything that users
+ can regenerate automatically from other parts of the Corresponding
+ Source.
+
+   The Corresponding Source for a work in source code form is that
+ same work.
+
+   2. Basic Permissions.
+
+   All rights granted under this License are granted for the term of
+ copyright on the Program, and are irrevocable provided the stated
+ conditions are met.  This License explicitly affirms your unlimited
+ permission to run the unmodified Program.  The output from running a
+ covered work is covered by this License only if the output, given its
+ content, constitutes a covered work.  This License acknowledges your
+ rights of fair use or other equivalent, as provided by copyright law.
+
+   You may make, run and propagate covered works that you do not
+ convey, without conditions so long as your license otherwise remains
+ in force.  You may convey covered works to others for the sole purpose
+ of having them make modifications exclusively for you, or provide you
+ with facilities for running those works, provided that you comply with
+ the terms of this License in conveying all material for which you do
+ not control copyright.  Those thus making or running the covered works
+ for you must do so exclusively on your behalf, under your direction
+ and control, on terms that prohibit them from making any copies of
+ your copyrighted material outside their relationship with you.
+
+   Conveying under any other circumstances is permitted solely under
+ the conditions stated below.  Sublicensing is not allowed; section 10
+ makes it unnecessary.
+
+   3. Protecting Users' Legal Rights From Anti-Circumvention Law.
+
+   No covered work shall be deemed part of an effective technological
+ measure under any applicable law fulfilling obligations under article
+ 11 of the WIPO copyright treaty adopted on 20 December 1996, or
+ similar laws prohibiting or restricting circumvention of such
+ measures.
+
+   When you convey a covered work, you waive any legal power to forbid
+ circumvention of technological measures to the extent such circumvention
+ is effected by exercising rights under this License with respect to
+ the covered work, and you disclaim any intention to limit operation or
+ modification of the work as a means of enforcing, against the work's
+ users, your or third parties' legal rights to forbid circumvention of
+ technological measures.
+
+   4. Conveying Verbatim Copies.
+
+   You may convey verbatim copies of the Program's source code as you
+ receive it, in any medium, provided that you conspicuously and
+ appropriately publish on each copy an appropriate copyright notice;
+ keep intact all notices stating that this License and any
+ non-permissive terms added in accord with section 7 apply to the code;
+ keep intact all notices of the absence of any warranty; and give all
+ recipients a copy of this License along with the Program.
+
+   You may charge any price or no price for each copy that you convey,
+ and you may offer support or warranty protection for a fee.
+
+   5. Conveying Modified Source Versions.
+
+   You may convey a work based on the Program, or the modifications to
+ produce it from the Program, in the form of source code under the
+ terms of section 4, provided that you also meet all of these conditions:
+
+     a) The work must carry prominent notices stating that you modified
+     it, and giving a relevant date.
+
+     b) The work must carry prominent notices stating that it is
+     released under this License and any conditions added under section
+     7.  This requirement modifies the requirement in section 4 to
+     "keep intact all notices".
+
+     c) You must license the entire work, as a whole, under this
+     License to anyone who comes into possession of a copy.  This
+     License will therefore apply, along with any applicable section 7
+     additional terms, to the whole of the work, and all its parts,
+     regardless of how they are packaged.  This License gives no
+     permission to license the work in any other way, but it does not
+     invalidate such permission if you have separately received it.
+
+     d) If the work has interactive user interfaces, each must display
+     Appropriate Legal Notices; however, if the Program has interactive
+     interfaces that do not display Appropriate Legal Notices, your
+     work need not make them do so.
+
+   A compilation of a covered work with other separate and independent
+ works, which are not by their nature extensions of the covered work,
+ and which are not combined with it such as to form a larger program,
+ in or on a volume of a storage or distribution medium, is called an
+ "aggregate" if the compilation and its resulting copyright are not
+ used to limit the access or legal rights of the compilation's users
+ beyond what the individual works permit.  Inclusion of a covered work
+ in an aggregate does not cause this License to apply to the other
+ parts of the aggregate.
+
+   6. Conveying Non-Source Forms.
+
+   You may convey a covered work in object code form under the terms
+ of sections 4 and 5, provided that you also convey the
+ machine-readable Corresponding Source under the terms of this License,
+ in one of these ways:
+
+     a) Convey the object code in, or embodied in, a physical product
+     (including a physical distribution medium), accompanied by the
+     Corresponding Source fixed on a durable physical medium
+     customarily used for software interchange.
+
+     b) Convey the object code in, or embodied in, a physical product
+     (including a physical distribution medium), accompanied by a
+     written offer, valid for at least three years and valid for as
+     long as you offer spare parts or customer support for that product
+     model, to give anyone who possesses the object code either (1) a
+     copy of the Corresponding Source for all the software in the
+     product that is covered by this License, on a durable physical
+     medium customarily used for software interchange, for a price no
+     more than your reasonable cost of physically performing this
+     conveying of source, or (2) access to copy the
+     Corresponding Source from a network server at no charge.
+
+     c) Convey individual copies of the object code with a copy of the
+     written offer to provide the Corresponding Source.  This
+     alternative is allowed only occasionally and noncommercially, and
+     only if you received the object code with such an offer, in accord
+     with subsection 6b.
+
+     d) Convey the object code by offering access from a designated
+     place (gratis or for a charge), and offer equivalent access to the
+     Corresponding Source in the same way through the same place at no
+     further charge.  You need not require recipients to copy the
+     Corresponding Source along with the object code.  If the place to
+     copy the object code is a network server, the Corresponding Source
+     may be on a different server (operated by you or a third party)
+     that supports equivalent copying facilities, provided you maintain
+     clear directions next to the object code saying where to find the
+     Corresponding Source.  Regardless of what server hosts the
+     Corresponding Source, you remain obligated to ensure that it is
+     available for as long as needed to satisfy these requirements.
+
+     e) Convey the object code using peer-to-peer transmission, provided
+     you inform other peers where the object code and Corresponding
+     Source of the work are being offered to the general public at no
+     charge under subsection 6d.
+
+   A separable portion of the object code, whose source code is excluded
+ from the Corresponding Source as a System Library, need not be
+ included in conveying the object code work.
+
+   A "User Product" is either (1) a "consumer product", which means any
+ tangible personal property which is normally used for personal, family,
+ or household purposes, or (2) anything designed or sold for incorporation
+ into a dwelling.  In determining whether a product is a consumer product,
+ doubtful cases shall be resolved in favor of coverage.  For a particular
+ product received by a particular user, "normally used" refers to a
+ typical or common use of that class of product, regardless of the status
+ of the particular user or of the way in which the particular user
+ actually uses, or expects or is expected to use, the product.  A product
+ is a consumer product regardless of whether the product has substantial
+ commercial, industrial or non-consumer uses, unless such uses represent
+ the only significant mode of use of the product.
+
+   "Installation Information" for a User Product means any methods,
+ procedures, authorization keys, or other information required to install
+ and execute modified versions of a covered work in that User Product from
+ a modified version of its Corresponding Source.  The information must
+ suffice to ensure that the continued functioning of the modified object
+ code is in no case prevented or interfered with solely because
+ modification has been made.
+
+   If you convey an object code work under this section in, or with, or
+ specifically for use in, a User Product, and the conveying occurs as
+ part of a transaction in which the right of possession and use of the
+ User Product is transferred to the recipient in perpetuity or for a
+ fixed term (regardless of how the transaction is characterized), the
+ Corresponding Source conveyed under this section must be accompanied
+ by the Installation Information.  But this requirement does not apply
+ if neither you nor any third party retains the ability to install
+ modified object code on the User Product (for example, the work has
+ been installed in ROM).
+
+   The requirement to provide Installation Information does not include a
+ requirement to continue to provide support service, warranty, or updates
+ for a work that has been modified or installed by the recipient, or for
+ the User Product in which it has been modified or installed.  Access to a
+ network may be denied when the modification itself materially and
+ adversely affects the operation of the network or violates the rules and
+ protocols for communication across the network.
+
+   Corresponding Source conveyed, and Installation Information provided,
+ in accord with this section must be in a format that is publicly
+ documented (and with an implementation available to the public in
+ source code form), and must require no special password or key for
+ unpacking, reading or copying.
+
+   7. Additional Terms.
+
+   "Additional permissions" are terms that supplement the terms of this
+ License by making exceptions from one or more of its conditions.
+ Additional permissions that are applicable to the entire Program shall
+ be treated as though they were included in this License, to the extent
+ that they are valid under applicable law.  If additional permissions
+ apply only to part of the Program, that part may be used separately
+ under those permissions, but the entire Program remains governed by
+ this License without regard to the additional permissions.
+
+   When you convey a copy of a covered work, you may at your option
+ remove any additional permissions from that copy, or from any part of
+ it.  (Additional permissions may be written to require their own
+ removal in certain cases when you modify the work.)  You may place
+ additional permissions on material, added by you to a covered work,
+ for which you have or can give appropriate copyright permission.
+
+   Notwithstanding any other provision of this License, for material you
+ add to a covered work, you may (if authorized by the copyright holders of
+ that material) supplement the terms of this License with terms:
+
+     a) Disclaiming warranty or limiting liability differently from the
+     terms of sections 15 and 16 of this License; or
+
+     b) Requiring preservation of specified reasonable legal notices or
+     author attributions in that material or in the Appropriate Legal
+     Notices displayed by works containing it; or
+
+     c) Prohibiting misrepresentation of the origin of that material, or
+     requiring that modified versions of such material be marked in
+     reasonable ways as different from the original version; or
+
+     d) Limiting the use for publicity purposes of names of licensors or
+     authors of the material; or
+
+     e) Declining to grant rights under trademark law for use of some
+     trade names, trademarks, or service marks; or
+
+     f) Requiring indemnification of licensors and authors of that
+     material by anyone who conveys the material (or modified versions of
+     it) with contractual assumptions of liability to the recipient, for
+     any liability that these contractual assumptions directly impose on
+     those licensors and authors.
+
+   All other non-permissive additional terms are considered "further
+ restrictions" within the meaning of section 10.  If the Program as you
+ received it, or any part of it, contains a notice stating that it is
+ governed by this License along with a term that is a further
+ restriction, you may remove that term.  If a license document contains
+ a further restriction but permits relicensing or conveying under this
+ License, you may add to a covered work material governed by the terms
+ of that license document, provided that the further restriction does
+ not survive such relicensing or conveying.
+
+   If you add terms to a covered work in accord with this section, you
+ must place, in the relevant source files, a statement of the
+ additional terms that apply to those files, or a notice indicating
+ where to find the applicable terms.
+
+   Additional terms, permissive or non-permissive, may be stated in the
+ form of a separately written license, or stated as exceptions;
+ the above requirements apply either way.
+
+   8. Termination.
+
+   You may not propagate or modify a covered work except as expressly
+ provided under this License.  Any attempt otherwise to propagate or
+ modify it is void, and will automatically terminate your rights under
+ this License (including any patent licenses granted under the third
+ paragraph of section 11).
+
+   However, if you cease all violation of this License, then your
+ license from a particular copyright holder is reinstated (a)
+ provisionally, unless and until the copyright holder explicitly and
+ finally terminates your license, and (b) permanently, if the copyright
+ holder fails to notify you of the violation by some reasonable means
+ prior to 60 days after the cessation.
+
+   Moreover, your license from a particular copyright holder is
+ reinstated permanently if the copyright holder notifies you of the
+ violation by some reasonable means, this is the first time you have
+ received notice of violation of this License (for any work) from that
+ copyright holder, and you cure the violation prior to 30 days after
+ your receipt of the notice.
+
+   Termination of your rights under this section does not terminate the
+ licenses of parties who have received copies or rights from you under
+ this License.  If your rights have been terminated and not permanently
+ reinstated, you do not qualify to receive new licenses for the same
+ material under section 10.
+
+   9. Acceptance Not Required for Having Copies.
+
+   You are not required to accept this License in order to receive or
+ run a copy of the Program.  Ancillary propagation of a covered work
+ occurring solely as a consequence of using peer-to-peer transmission
+ to receive a copy likewise does not require acceptance.  However,
+ nothing other than this License grants you permission to propagate or
+ modify any covered work.  These actions infringe copyright if you do
+ not accept this License.  Therefore, by modifying or propagating a
+ covered work, you indicate your acceptance of this License to do so.
+
+   10. Automatic Licensing of Downstream Recipients.
+
+   Each time you convey a covered work, the recipient automatically
+ receives a license from the original licensors, to run, modify and
+ propagate that work, subject to this License.  You are not responsible
+ for enforcing compliance by third parties with this License.
+
+   An "entity transaction" is a transaction transferring control of an
+ organization, or substantially all assets of one, or subdividing an
+ organization, or merging organizations.  If propagation of a covered
+ work results from an entity transaction, each party to that
+ transaction who receives a copy of the work also receives whatever
+ licenses to the work the party's predecessor in interest had or could
+ give under the previous paragraph, plus a right to possession of the
+ Corresponding Source of the work from the predecessor in interest, if
+ the predecessor has it or can get it with reasonable efforts.
+
+   You may not impose any further restrictions on the exercise of the
+ rights granted or affirmed under this License.  For example, you may
+ not impose a license fee, royalty, or other charge for exercise of
+ rights granted under this License, and you may not initiate litigation
+ (including a cross-claim or counterclaim in a lawsuit) alleging that
+ any patent claim is infringed by making, using, selling, offering for
+ sale, or importing the Program or any portion of it.
+
+   11. Patents.
+
+   A "contributor" is a copyright holder who authorizes use under this
+ License of the Program or a work on which the Program is based.  The
+ work thus licensed is called the contributor's "contributor version".
+
+   A contributor's "essential patent claims" are all patent claims
+ owned or controlled by the contributor, whether already acquired or
+ hereafter acquired, that would be infringed by some manner, permitted
+ by this License, of making, using, or selling its contributor version,
+ but do not include claims that would be infringed only as a
+ consequence of further modification of the contributor version.  For
+ purposes of this definition, "control" includes the right to grant
+ patent sublicenses in a manner consistent with the requirements of
+ this License.
+
+   Each contributor grants you a non-exclusive, worldwide, royalty-free
+ patent license under the contributor's essential patent claims, to
+ make, use, sell, offer for sale, import and otherwise run, modify and
+ propagate the contents of its contributor version.
+
+   In the following three paragraphs, a "patent license" is any express
+ agreement or commitment, however denominated, not to enforce a patent
+ (such as an express permission to practice a patent or covenant not to
+ sue for patent infringement).  To "grant" such a patent license to a
+ party means to make such an agreement or commitment not to enforce a
+ patent against the party.
+
+   If you convey a covered work, knowingly relying on a patent license,
+ and the Corresponding Source of the work is not available for anyone
+ to copy, free of charge and under the terms of this License, through a
+ publicly available network server or other readily accessible means,
+ then you must either (1) cause the Corresponding Source to be so
+ available, or (2) arrange to deprive yourself of the benefit of the
+ patent license for this particular work, or (3) arrange, in a manner
+ consistent with the requirements of this License, to extend the patent
+ license to downstream recipients.  "Knowingly relying" means you have
+ actual knowledge that, but for the patent license, your conveying the
+ covered work in a country, or your recipient's use of the covered work
+ in a country, would infringe one or more identifiable patents in that
+ country that you have reason to believe are valid.
+
+   If, pursuant to or in connection with a single transaction or
+ arrangement, you convey, or propagate by procuring conveyance of, a
+ covered work, and grant a patent license to some of the parties
+ receiving the covered work authorizing them to use, propagate, modify
+ or convey a specific copy of the covered work, then the patent license
+ you grant is automatically extended to all recipients of the covered
+ work and works based on it.
+
+   A patent license is "discriminatory" if it does not include within
+ the scope of its coverage, prohibits the exercise of, or is
+ conditioned on the non-exercise of one or more of the rights that are
+ specifically granted under this License.  You may not convey a covered
+ work if you are a party to an arrangement with a third party that is
+ in the business of distributing software, under which you make payment
+ to the third party based on the extent of your activity of conveying
+ the work, and under which the third party grants, to any of the
+ parties who would receive the covered work from you, a discriminatory
+ patent license (a) in connection with copies of the covered work
+ conveyed by you (or copies made from those copies), or (b) primarily
+ for and in connection with specific products or compilations that
+ contain the covered work, unless you entered into that arrangement,
+ or that patent license was granted, prior to 28 March 2007.
+
+   Nothing in this License shall be construed as excluding or limiting
+ any implied license or other defenses to infringement that may
+ otherwise be available to you under applicable patent law.
+
+   12. No Surrender of Others' Freedom.
+
+   If conditions are imposed on you (whether by court order, agreement or
+ otherwise) that contradict the conditions of this License, they do not
+ excuse you from the conditions of this License.  If you cannot convey a
+ covered work so as to satisfy simultaneously your obligations under this
+ License and any other pertinent obligations, then as a consequence you may
+ not convey it at all.  For example, if you agree to terms that obligate you
+ to collect a royalty for further conveying from those to whom you convey
+ the Program, the only way you could satisfy both those terms and this
+ License would be to refrain entirely from conveying the Program.
+
+   13. Use with the GNU Affero General Public License.
+
+   Notwithstanding any other provision of this License, you have
+ permission to link or combine any covered work with a work licensed
+ under version 3 of the GNU Affero General Public License into a single
+ combined work, and to convey the resulting work.  The terms of this
+ License will continue to apply to the part which is the covered work,
+ but the special requirements of the GNU Affero General Public License,
+ section 13, concerning interaction through a network will apply to the
+ combination as such.
+
+   14. Revised Versions of this License.
+
+   The Free Software Foundation may publish revised and/or new versions of
+ the GNU General Public License from time to time.  Such new versions will
+ be similar in spirit to the present version, but may differ in detail to
+ address new problems or concerns.
+
+   Each version is given a distinguishing version number.  If the
+ Program specifies that a certain numbered version of the GNU General
+ Public License "or any later version" applies to it, you have the
+ option of following the terms and conditions either of that numbered
+ version or of any later version published by the Free Software
+ Foundation.  If the Program does not specify a version number of the
+ GNU General Public License, you may choose any version ever published
+ by the Free Software Foundation.
+
+   If the Program specifies that a proxy can decide which future
+ versions of the GNU General Public License can be used, that proxy's
+ public statement of acceptance of a version permanently authorizes you
+ to choose that version for the Program.
+
+   Later license versions may give you additional or different
+ permissions.  However, no additional obligations are imposed on any
+ author or copyright holder as a result of your choosing to follow a
+ later version.
+
+   15. Disclaimer of Warranty.
+
+   THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
+ APPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
+ HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY
+ OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,
+ THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM
+ IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF
+ ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+   16. Limitation of Liability.
+
+   IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+ WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS
+ THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
+ GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+ USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
+ DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
+ PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
+ EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGES.
+
+   17. Interpretation of Sections 15 and 16.
+
+   If the disclaimer of warranty and limitation of liability provided
+ above cannot be given local legal effect according to their terms,
+ reviewing courts shall apply local law that most closely approximates
+ an absolute waiver of all civil liability in connection with the
+ Program, unless a warranty or assumption of liability accompanies a
+ copy of the Program in return for a fee.
+
+                      END OF TERMS AND CONDITIONS
+
+             How to Apply These Terms to Your New Programs
+
+   If you develop a new program, and you want it to be of the greatest
+ possible use to the public, the best way to achieve this is to make it
+ free software which everyone can redistribute and change under these terms.
+
+   To do so, attach the following notices to the program.  It is safest
+ to attach them to the start of each source file to most effectively
+ state the exclusion of warranty; and each file should have at least
+ the "copyright" line and a pointer to where the full notice is found.
+
+     <one line to give the program's name and a brief idea of what it does.>
+     Copyright (C) <year>  <name of author>
+
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+ Also add information on how to contact you by electronic and paper mail.
+
+   If the program does terminal interaction, make it output a short
+ notice like this when it starts in an interactive mode:
+
+     <program>  Copyright (C) <year>  <name of author>
+     This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+     This is free software, and you are welcome to redistribute it
+     under certain conditions; type `show c' for details.
+
+ The hypothetical commands `show w' and `show c' should show the appropriate
+ parts of the General Public License.  Of course, your program's commands
+ might be different; for a GUI interface, you would use an "about box".
+
+   You should also get your employer (if you work as a programmer) or school,
+ if any, to sign a "copyright disclaimer" for the program, if necessary.
+ For more information on this, and how to apply and follow the GNU GPL, see
+ <http://www.gnu.org/licenses/>.
+
+   The GNU General Public License does not permit incorporating your program
+ into proprietary programs.  If your program is a subroutine library, you
+ may consider it more useful to permit linking proprietary applications with
+ the library.  If this is what you want to do, use the GNU Lesser General
+ Public License instead of this License.  But first, please read
+ <http://www.gnu.org/philosophy/why-not-lgpl.html>.
+
+Location: C:\Users\Smarprex Telecom\OneDrive\Desktop\research_analysis\.venv\Lib\site-packages
+Requires: numpy
+Required-by: formulaic, statsmodels
+---
+Name: statsmodels
+Version: 0.15.0
+Summary: Statistical computations and models for Python
+Home-page: https://www.statsmodels.org
+Author: 
+Author-email: 
+License-Expression: BSD-3-Clause
+Location: C:\Users\Smarprex Telecom\OneDrive\Desktop\research_analysis\.venv\Lib\site-packages
+Requires: formulaic, numpy, packaging, pandas, patsy, scipy
+Required-by: 
+---
+Name: openpyxl
+Version: 3.1.5
+Summary: A Python library to read/write Excel 2010 xlsx/xlsm files
+Home-page: https://openpyxl.readthedocs.io
+Author: See AUTHORS
+Author-email: charlie.clark@clark-consulting.eu
+License: MIT
+Location: C:\Users\Smarprex Telecom\OneDrive\Desktop\research_analysis\.venv\Lib\site-packages
+Requires: et-xmlfile
+Required-by: 
+---
+Name: pyreadstat
+Version: 1.3.6
+Summary: Reads and Writes SAS, SPSS and Stata files into/from pandas and polars data frames.
+Home-page: https://github.com/Roche/pyreadstat
+Author: Otto Fajardo
+Author-email: pleasecontactviagithub@notvalid.com
+License: Apache-2.0
+Location: C:\Users\Smarprex Telecom\OneDrive\Desktop\research_analysis\.venv\Lib\site-packages
+Requires: narwhals, numpy
+Required-by: 
+---
+Name: pytest
+Version: 9.1.1
+Summary: pytest: simple powerful testing with Python
+Home-page: https://docs.pytest.org/en/latest/
+Author: Brianna Laugher, Bruno Oliveira, Floris Bruynooghe, Freya Bruhin, Holger Krekel, Others (See AUTHORS), Ronny Pfannschmidt
+Author-email: 
+License-Expression: MIT
+Location: C:\Users\Smarprex Telecom\OneDrive\Desktop\research_analysis\.venv\Lib\site-packages
+Requires: colorama, iniconfig, packaging, pluggy, pygments
+Required-by: 
+
+========== 3. SOURCE CODE ==========
+
+--- FILE: app\main.py ---
+import sys
+
+from PySide6.QtWidgets import QApplication
+
+from app.ui.main_window import MainWindow
+
+
+def main():
+    app = QApplication(sys.argv)
+
+    window = MainWindow()
+    window.show()
+
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
+
+--- FILE: app\database\database.py ---
+import sqlite3
+from pathlib import Path
+
+
+class Database:
+    def __init__(self):
+        self.database_dir = Path("app/database")
+        self.database_dir.mkdir(parents=True, exist_ok=True)
+
+        self.database_path = self.database_dir / "research_analysis.db"
+
+        self.connection = sqlite3.connect(self.database_path)
+        self.connection.row_factory = sqlite3.Row
+
+        self.create_tables()
+
+    # =========================================================
+    # DATABASE TABLES
+    # =========================================================
+
+    def create_tables(self):
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                research_title TEXT,
+                researcher TEXT,
+                institution TEXT,
+                department TEXT,
+                significance_level REAL DEFAULT 0.05,
+                status TEXT DEFAULT 'New',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS datasets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                row_count INTEGER DEFAULT 0,
+                column_count INTEGER DEFAULT 0,
+                imported_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (project_id)
+                    REFERENCES projects(id)
+                    ON DELETE CASCADE
+            )
+        """)
+
+        self.connection.commit()
+
+    # =========================================================
+    # PROJECTS
+    # =========================================================
+
+    def create_project(
+        self,
+        name,
+        research_title="",
+        researcher="",
+        institution="",
+        department="",
+        significance_level=0.05,
+    ):
+        cursor = self.connection.execute(
+            """
+            INSERT INTO projects (
+                name,
+                research_title,
+                researcher,
+                institution,
+                department,
+                significance_level
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                name,
+                research_title,
+                researcher,
+                institution,
+                department,
+                significance_level,
+            ),
+        )
+
+        self.connection.commit()
+
+        return cursor.lastrowid
+
+    def get_projects(self):
+        cursor = self.connection.execute(
+            """
+            SELECT *
+            FROM projects
+            ORDER BY updated_at DESC
+            """
+        )
+
+        return cursor.fetchall()
+
+    def get_project(self, project_id):
+        cursor = self.connection.execute(
+            """
+            SELECT *
+            FROM projects
+            WHERE id = ?
+            """,
+            (project_id,),
+        )
+
+        return cursor.fetchone()
+
+    def delete_project(self, project_id):
+        self.connection.execute(
+            """
+            DELETE FROM projects
+            WHERE id = ?
+            """,
+            (project_id,),
+        )
+
+        self.connection.commit()
+
+    # =========================================================
+    # DATASETS
+    # =========================================================
+
+    def create_dataset(
+        self,
+        project_id,
+        filename,
+        file_path,
+        file_type,
+        row_count,
+        column_count,
+    ):
+        cursor = self.connection.execute(
+            """
+            INSERT INTO datasets (
+                project_id,
+                filename,
+                file_path,
+                file_type,
+                row_count,
+                column_count
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                project_id,
+                filename,
+                file_path,
+                file_type,
+                row_count,
+                column_count,
+            ),
+        )
+
+        self.connection.commit()
+
+        return cursor.lastrowid
+
+    def get_project_datasets(self, project_id):
+        cursor = self.connection.execute(
+            """
+            SELECT *
+            FROM datasets
+            WHERE project_id = ?
+            ORDER BY imported_at DESC
+            """,
+            (project_id,),
+        )
+
+        return cursor.fetchall()
+
+    def get_dataset(self, dataset_id):
+        cursor = self.connection.execute(
+            """
+            SELECT *
+            FROM datasets
+            WHERE id = ?
+            """,
+            (dataset_id,),
+        )
+
+        return cursor.fetchone()
+
+    def delete_dataset(self, dataset_id):
+        self.connection.execute(
+            """
+            DELETE FROM datasets
+            WHERE id = ?
+            """,
+            (dataset_id,),
+        )
+
+        self.connection.commit()
+
+    # =========================================================
+    # CLOSE DATABASE
+    # =========================================================
+
+    def close(self):
+        self.connection.close()
+
+--- FILE: app\models\dataset.py ---
+from dataclasses import dataclass
+
+
+@dataclass
+class Dataset:
+    id: int | None = None
+    project_id: int | None = None
+    filename: str = ""
+    file_path: str = ""
+    file_type: str = ""
+    row_count: int = 0
+    column_count: int = 0
+    imported_at: str | None = None
+
+--- FILE: app\models\project.py ---
+from dataclasses import dataclass
+
+
+@dataclass
+class Project:
+    id: int | None = None
+    name: str = ""
+    research_title: str = ""
+    researcher: str = ""
+    institution: str = ""
+    department: str = ""
+    significance_level: float = 0.05
+    status: str = "New"
+    created_at: str | None = None
+    updated_at: str | None = None
+
+--- FILE: app\statistics\data_cleaner.py ---
+import pandas as pd
+import numpy as np
+
+
+class DataCleaner:
+
+    def __init__(self, dataframe):
+        self.dataframe = dataframe.copy()
+
+    # =========================================================
+    # RENAME VARIABLE
+    # =========================================================
+
+    def rename_variable(
+        self,
+        old_name,
+        new_name
+    ):
+
+        if old_name not in self.dataframe.columns:
+            raise ValueError(
+                f"Variable '{old_name}' does not exist."
+            )
+
+        if not new_name:
+            raise ValueError(
+                "New variable name cannot be empty."
+            )
+
+        if new_name in self.dataframe.columns:
+            raise ValueError(
+                f"Variable '{new_name}' already exists."
+            )
+
+        self.dataframe = self.dataframe.rename(
+            columns={
+                old_name: new_name
+            }
+        )
+
+        return self.dataframe
+
+    # =========================================================
+    # RECODE VALUES
+    # =========================================================
+
+    def recode_values(
+        self,
+        variable,
+        mapping,
+        new_variable=None
+    ):
+
+        if variable not in self.dataframe.columns:
+            raise ValueError(
+                f"Variable '{variable}' does not exist."
+            )
+
+        target = (
+            new_variable
+            if new_variable
+            else variable
+        )
+
+        self.dataframe[target] = (
+            self.dataframe[variable]
+            .replace(mapping)
+        )
+
+        return self.dataframe
+
+    # =========================================================
+    # DEFINE MISSING VALUES
+    # =========================================================
+
+    def define_missing_values(
+        self,
+        variable,
+        missing_values
+    ):
+
+        if variable not in self.dataframe.columns:
+            raise ValueError(
+                f"Variable '{variable}' does not exist."
+            )
+
+        self.dataframe[variable] = (
+            self.dataframe[variable]
+            .replace(
+                missing_values,
+                np.nan
+            )
+        )
+
+        return self.dataframe
+
+    # =========================================================
+    # REVERSE SCORE
+    # =========================================================
+
+    def reverse_score(
+        self,
+        variable,
+        minimum=1,
+        maximum=5,
+        new_variable=None
+    ):
+
+        if variable not in self.dataframe.columns:
+            raise ValueError(
+                f"Variable '{variable}' does not exist."
+            )
+
+        target = (
+            new_variable
+            if new_variable
+            else variable
+        )
+
+        self.dataframe[target] = (
+            maximum
+            + minimum
+            - self.dataframe[variable]
+        )
+
+        return self.dataframe
+
+    # =========================================================
+    # COMPUTED VARIABLE
+    # =========================================================
+
+    def compute_variable(
+        self,
+        new_variable,
+        variables,
+        operation="mean"
+    ):
+
+        missing = [
+            variable
+            for variable in variables
+            if variable not in self.dataframe.columns
+        ]
+
+        if missing:
+            raise ValueError(
+                f"Variables not found: {missing}"
+            )
+
+        if operation == "mean":
+
+            self.dataframe[new_variable] = (
+                self.dataframe[variables]
+                .mean(axis=1)
+            )
+
+        elif operation == "sum":
+
+            self.dataframe[new_variable] = (
+                self.dataframe[variables]
+                .sum(axis=1)
+            )
+
+        elif operation == "min":
+
+            self.dataframe[new_variable] = (
+                self.dataframe[variables]
+                .min(axis=1)
+            )
+
+        elif operation == "max":
+
+            self.dataframe[new_variable] = (
+                self.dataframe[variables]
+                .max(axis=1)
+            )
+
+        else:
+
+            raise ValueError(
+                f"Unsupported operation: {operation}"
+            )
+
+        return self.dataframe
+
+    # =========================================================
+    # DUPLICATES
+    # =========================================================
+
+    def find_duplicates(self):
+
+        return self.dataframe[
+            self.dataframe.duplicated(
+                keep=False
+            )
+        ]
+
+    # =========================================================
+    # REMOVE DUPLICATES
+    # =========================================================
+
+    def remove_duplicates(self):
+
+        self.dataframe = (
+            self.dataframe
+            .drop_duplicates()
+            .reset_index(drop=True)
+        )
+
+        return self.dataframe
+
+    # =========================================================
+    # MISSING VALUE SUMMARY
+    # =========================================================
+
+    def missing_summary(self):
+
+        summary = []
+
+        for column in self.dataframe.columns:
+
+            missing = int(
+                self.dataframe[column]
+                .isna()
+                .sum()
+            )
+
+            total = len(
+                self.dataframe
+            )
+
+            percentage = (
+                missing / total * 100
+                if total > 0
+                else 0
+            )
+
+            summary.append(
+                {
+                    "variable": column,
+                    "missing": missing,
+                    "percentage": percentage,
+                }
+            )
+
+        return summary
+
+    # =========================================================
+    # NUMERIC RANGE CHECK
+    # =========================================================
+
+    def find_out_of_range(
+        self,
+        variable,
+        minimum,
+        maximum
+    ):
+
+        if variable not in self.dataframe.columns:
+            raise ValueError(
+                f"Variable '{variable}' does not exist."
+            )
+
+        numeric = pd.to_numeric(
+            self.dataframe[variable],
+            errors="coerce"
+        )
+
+        mask = (
+            (numeric < minimum)
+            | (numeric > maximum)
+        )
+
+        return self.dataframe[
+            mask
+        ]
+
+    # =========================================================
+    # GET DATAFRAME
+    # =========================================================
+
+    def get_dataframe(self):
+
+        return self.dataframe.copy()
+
+--- FILE: app\statistics\descriptive_statistics.py ---
+import pandas as pd
+import numpy as np
+
+
+class DescriptiveStatistics:
+
+    def __init__(self, dataframe):
+        """
+        Initialize the descriptive statistics engine.
+
+        Parameters
+        ----------
+        dataframe : pandas.DataFrame
+            Dataset to analyze.
+        """
+
+        if not isinstance(dataframe, pd.DataFrame):
+            raise TypeError(
+                "dataframe must be a pandas DataFrame."
+            )
+
+        self.dataframe = dataframe.copy()
+
+    # =========================================================
+    # INTERNAL HELPERS
+    # =========================================================
+
+    def _validate_variable(self, variable):
+        """
+        Check that a variable exists in the dataset.
+        """
+
+        if variable not in self.dataframe.columns:
+            raise ValueError(
+                f"Variable '{variable}' does not exist."
+            )
+
+    def _numeric_series(self, variable):
+        """
+        Convert a variable to numeric values.
+
+        Invalid values are converted to NaN.
+        """
+
+        self._validate_variable(variable)
+
+        return pd.to_numeric(
+            self.dataframe[variable],
+            errors="coerce"
+        )
+
+    # =========================================================
+    # NUMERIC SUMMARY
+    # =========================================================
+
+    def numeric_summary(self, variables=None):
+        """
+        Generate descriptive statistics for numeric variables.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+
+        if variables is None:
+            variables = self.dataframe.columns.tolist()
+
+        results = []
+
+        for variable in variables:
+
+            if variable not in self.dataframe.columns:
+                continue
+
+            series = pd.to_numeric(
+                self.dataframe[variable],
+                errors="coerce"
+            )
+
+            valid = series.dropna()
+
+            if len(valid) == 0:
+                continue
+
+            mode_values = valid.mode()
+
+            if len(mode_values) > 0:
+                mode = mode_values.iloc[0]
+            else:
+                mode = np.nan
+
+            results.append({
+                "Variable": variable,
+
+                "N": int(valid.count()),
+
+                "Missing": int(
+                    series.isna().sum()
+                ),
+
+                "Mean": round(
+                    valid.mean(),
+                    3
+                ),
+
+                "Median": round(
+                    valid.median(),
+                    3
+                ),
+
+                "Mode": round(
+                    mode,
+                    3
+                ) if pd.notna(mode) else np.nan,
+
+                "Std. Deviation": round(
+                    valid.std(),
+                    3
+                ),
+
+                "Variance": round(
+                    valid.var(),
+                    3
+                ),
+
+                "Minimum": round(
+                    valid.min(),
+                    3
+                ),
+
+                "Maximum": round(
+                    valid.max(),
+                    3
+                ),
+
+                "Range": round(
+                    valid.max() - valid.min(),
+                    3
+                ),
+
+                "Skewness": round(
+                    valid.skew(),
+                    3
+                ) if len(valid) >= 3 else np.nan,
+
+                "Kurtosis": round(
+                    valid.kurt(),
+                    3
+                ) if len(valid) >= 4 else np.nan,
+
+                "Q1": round(
+                    valid.quantile(0.25),
+                    3
+                ),
+
+                "Q2": round(
+                    valid.quantile(0.50),
+                    3
+                ),
+
+                "Q3": round(
+                    valid.quantile(0.75),
+                    3
+                ),
+            })
+
+        return pd.DataFrame(results)
+
+    # =========================================================
+    # SINGLE VARIABLE SUMMARY
+    # =========================================================
+
+    def variable_summary(self, variable):
+        """
+        Generate a detailed summary for one variable.
+        """
+
+        self._validate_variable(variable)
+
+        series = pd.to_numeric(
+            self.dataframe[variable],
+            errors="coerce"
+        )
+
+        valid = series.dropna()
+
+        if len(valid) == 0:
+            return {
+                "Variable": variable,
+                "N": 0,
+                "Missing": int(series.isna().sum()),
+                "Mean": np.nan,
+                "Median": np.nan,
+                "Mode": np.nan,
+                "Std. Deviation": np.nan,
+                "Variance": np.nan,
+                "Minimum": np.nan,
+                "Maximum": np.nan,
+                "Range": np.nan,
+                "Skewness": np.nan,
+                "Kurtosis": np.nan,
+                "Q1": np.nan,
+                "Q2": np.nan,
+                "Q3": np.nan,
+            }
+
+        mode_values = valid.mode()
+
+        mode = (
+            mode_values.iloc[0]
+            if len(mode_values) > 0
+            else np.nan
+        )
+
+        return {
+            "Variable": variable,
+
+            "N": int(valid.count()),
+
+            "Missing": int(
+                series.isna().sum()
+            ),
+
+            "Mean": round(
+                valid.mean(),
+                3
+            ),
+
+            "Median": round(
+                valid.median(),
+                3
+            ),
+
+            "Mode": round(
+                mode,
+                3
+            ) if pd.notna(mode) else np.nan,
+
+            "Std. Deviation": round(
+                valid.std(),
+                3
+            ),
+
+            "Variance": round(
+                valid.var(),
+                3
+            ),
+
+            "Minimum": round(
+                valid.min(),
+                3
+            ),
+
+            "Maximum": round(
+                valid.max(),
+                3
+            ),
+
+            "Range": round(
+                valid.max() - valid.min(),
+                3
+            ),
+
+            "Skewness": round(
+                valid.skew(),
+                3
+            ) if len(valid) >= 3 else np.nan,
+
+            "Kurtosis": round(
+                valid.kurt(),
+                3
+            ) if len(valid) >= 4 else np.nan,
+
+            "Q1": round(
+                valid.quantile(0.25),
+                3
+            ),
+
+            "Q2": round(
+                valid.quantile(0.50),
+                3
+            ),
+
+            "Q3": round(
+                valid.quantile(0.75),
+                3
+            ),
+        }
+
+    # =========================================================
+    # FREQUENCY TABLE
+    # =========================================================
+
+    def frequency_table(self, variable):
+        """
+        Generate a frequency table.
+
+        Columns:
+        - Value
+        - Frequency
+        - Percent
+        - Valid Percent
+        - Cumulative Percent
+        """
+
+        self._validate_variable(variable)
+
+        series = self.dataframe[variable]
+
+        total = len(series)
+
+        valid_series = series.dropna()
+
+        valid_total = len(valid_series)
+
+        frequencies = (
+            series
+            .value_counts(
+                dropna=False
+            )
+        )
+
+        results = []
+
+        cumulative_valid = 0
+
+        for value, frequency in frequencies.items():
+
+            is_missing = pd.isna(value)
+
+            if is_missing:
+
+                label = "Missing"
+
+                percent = (
+                    frequency / total * 100
+                    if total > 0
+                    else 0
+                )
+
+                valid_percent = np.nan
+
+                cumulative_percent = np.nan
+
+            else:
+
+                label = value
+
+                percent = (
+                    frequency / total * 100
+                    if total > 0
+                    else 0
+                )
+
+                valid_percent = (
+                    frequency / valid_total * 100
+                    if valid_total > 0
+                    else 0
+                )
+
+                cumulative_valid += valid_percent
+
+                cumulative_percent = cumulative_valid
+
+            results.append({
+
+                "Value": label,
+
+                "Frequency": int(
+                    frequency
+                ),
+
+                "Percent": round(
+                    percent,
+                    2
+                ),
+
+                "Valid Percent": (
+                    round(
+                        valid_percent,
+                        2
+                    )
+                    if pd.notna(valid_percent)
+                    else np.nan
+                ),
+
+                "Cumulative Percent": (
+                    round(
+                        cumulative_percent,
+                        2
+                    )
+                    if pd.notna(
+                        cumulative_percent
+                    )
+                    else np.nan
+                ),
+            })
+
+        return pd.DataFrame(
+            results,
+            columns=[
+                "Value",
+                "Frequency",
+                "Percent",
+                "Valid Percent",
+                "Cumulative Percent",
+            ],
+        )
+
+    # =========================================================
+    # MULTIPLE FREQUENCY TABLES
+    # =========================================================
+
+    def frequency_tables(self, variables):
+        """
+        Generate frequency tables for multiple variables.
+
+        Returns
+        -------
+        dict
+            Dictionary where keys are variable names and
+            values are frequency DataFrames.
+        """
+
+        tables = {}
+
+        for variable in variables:
+
+            tables[variable] = (
+                self.frequency_table(
+                    variable
+                )
+            )
+
+        return tables
+
+    # =========================================================
+    # MODE
+    # =========================================================
+
+    def mode(self, variable):
+        """
+        Return the mode(s) of a variable.
+
+        Returns
+        -------
+        pandas.Series
+        """
+
+        self._validate_variable(variable)
+
+        series = self.dataframe[
+            variable
+        ].dropna()
+
+        if len(series) == 0:
+            return pd.Series(
+                dtype="float64"
+            )
+
+        return series.mode()
+
+    # =========================================================
+    # PERCENTILES
+    # =========================================================
+
+    def percentiles(
+        self,
+        variable,
+        percentiles=None
+    ):
+        """
+        Calculate requested percentiles.
+
+        Example
+        -------
+        percentiles(
+            "Age",
+            [10, 25, 50, 75, 90]
+        )
+        """
+
+        if percentiles is None:
+            percentiles = [
+                10,
+                25,
+                50,
+                75,
+                90
+            ]
+
+        series = self._numeric_series(
+            variable
+        ).dropna()
+
+        if len(series) == 0:
+            return {}
+
+        results = {}
+
+        for percentile in percentiles:
+
+            if not 0 <= percentile <= 100:
+                raise ValueError(
+                    "Percentiles must be between "
+                    "0 and 100."
+                )
+
+            results[
+                f"P{percentile}"
+            ] = round(
+                series.quantile(
+                    percentile / 100
+                ),
+                3
+            )
+
+        return results
+
+    # =========================================================
+    # MISSING VALUE SUMMARY
+    # =========================================================
+
+    def missing_summary(self):
+        """
+        Generate a missing-value summary for
+        every variable.
+        """
+
+        results = []
+
+        total_rows = len(
+            self.dataframe
+        )
+
+        for variable in self.dataframe.columns:
+
+            missing = int(
+                self.dataframe[
+                    variable
+                ].isna().sum()
+            )
+
+            valid = (
+                total_rows - missing
+            )
+
+            missing_percentage = (
+                missing / total_rows * 100
+                if total_rows > 0
+                else 0
+            )
+
+            valid_percentage = (
+                valid / total_rows * 100
+                if total_rows > 0
+                else 0
+            )
+
+            results.append({
+
+                "Variable": variable,
+
+                "Valid": valid,
+
+                "Missing": missing,
+
+                "Valid Percent": round(
+                    valid_percentage,
+                    2
+                ),
+
+                "Missing Percent": round(
+                    missing_percentage,
+                    2
+                ),
+            })
+
+        return pd.DataFrame(results)
+
+    # =========================================================
+    # DATASET OVERVIEW
+    # =========================================================
+
+    def dataset_overview(self):
+        """
+        Return a high-level overview of the dataset.
+        """
+
+        numeric_columns = (
+            self.dataframe
+            .select_dtypes(
+                include=np.number
+            )
+            .columns
+        )
+
+        categorical_columns = (
+            self.dataframe
+            .select_dtypes(
+                exclude=np.number
+            )
+            .columns
+        )
+
+        return {
+
+            "Rows": int(
+                len(self.dataframe)
+            ),
+
+            "Columns": int(
+                len(
+                    self.dataframe.columns
+                )
+            ),
+
+            "Numeric Variables": int(
+                len(numeric_columns)
+            ),
+
+            "Categorical Variables": int(
+                len(categorical_columns)
+            ),
+
+            "Missing Cells": int(
+                self.dataframe
+                .isna()
+                .sum()
+                .sum()
+            ),
+
+            "Complete Rows": int(
+                self.dataframe
+                .dropna()
+                .shape[0]
+            ),
+
+            "Duplicate Rows": int(
+                self.dataframe
+                .duplicated()
+                .sum()
+            ),
+        }
+
+    # =========================================================
+    # NUMERIC VARIABLES
+    # =========================================================
+
+    def numeric_variables(self):
+        """
+        Return a list of numeric variables.
+        """
+
+        return (
+            self.dataframe
+            .select_dtypes(
+                include=np.number
+            )
+            .columns
+            .tolist()
+        )
+
+    # =========================================================
+    # CATEGORICAL VARIABLES
+    # =========================================================
+
+    def categorical_variables(self):
+        """
+        Return a list of categorical variables.
+        """
+
+        return (
+            self.dataframe
+            .select_dtypes(
+                exclude=np.number
+            )
+            .columns
+            .tolist()
+        )
+
+    # =========================================================
+    # FULL DESCRIPTIVE REPORT
+    # =========================================================
+
+    def full_report(self):
+        """
+        Generate a complete descriptive-statistics report.
+
+        Returns
+        -------
+        dict
+        """
+
+        numeric_vars = (
+            self.numeric_variables()
+        )
+
+        categorical_vars = (
+            self.categorical_variables()
+        )
+
+        coded_categorical_vars = [
+            variable
+            for variable in numeric_vars
+            if self.dataframe[variable].nunique(dropna=True) <= 10
+        ]
+
+        frequency_vars = list(dict.fromkeys(
+            categorical_vars + coded_categorical_vars
+        ))
+
+        return {
+
+            "overview":
+                self.dataset_overview(),
+
+            "numeric_summary":
+                self.numeric_summary(
+                    numeric_vars
+                ),
+
+            "missing_summary":
+                self.missing_summary(),
+
+            "frequency_tables":
+                self.frequency_tables(
+                    frequency_vars
+                ),
+        }
+
+--- FILE: app\statistics\variable_inspector.py ---
+import pandas as pd
+import numpy as np
+
+
+class VariableInspector:
+
+    def __init__(self, dataframe):
+        self.dataframe = dataframe
+
+    # =========================================================
+    # INSPECT ALL VARIABLES
+    # =========================================================
+
+    def inspect(self):
+        variables = []
+
+        for column in self.dataframe.columns:
+
+            series = self.dataframe[column]
+
+            information = self.inspect_variable(
+                column,
+                series
+            )
+
+            variables.append(
+                information
+            )
+
+        return variables
+
+    # =========================================================
+    # INSPECT ONE VARIABLE
+    # =========================================================
+
+    def inspect_variable(
+        self,
+        name,
+        series
+    ):
+
+        variable_type = self.detect_type(
+            series
+        )
+
+        measure = self.detect_measure(
+            series
+        )
+
+        missing_count = int(
+            series.isna().sum()
+        )
+
+        unique_count = int(
+            series.nunique(
+                dropna=True
+            )
+        )
+
+        result = {
+            "name": name,
+            "label": name,
+            "type": variable_type,
+            "measure": measure,
+            "missing": missing_count,
+            "unique": unique_count,
+            "count": int(
+                series.count()
+            ),
+        }
+
+        # -----------------------------------------------------
+        # Numeric information
+        # -----------------------------------------------------
+
+        if pd.api.types.is_numeric_dtype(
+            series
+        ):
+
+            result["minimum"] = self.safe_numeric(
+                series.min()
+            )
+
+            result["maximum"] = self.safe_numeric(
+                series.max()
+            )
+
+            result["mean"] = self.safe_numeric(
+                series.mean()
+            )
+
+            result["std"] = self.safe_numeric(
+                series.std()
+            )
+
+        else:
+
+            result["minimum"] = None
+            result["maximum"] = None
+            result["mean"] = None
+            result["std"] = None
+
+        return result
+
+    # =========================================================
+    # DETECT TYPE
+    # =========================================================
+
+    def detect_type(
+        self,
+        series
+    ):
+
+        if pd.api.types.is_bool_dtype(
+            series
+        ):
+            return "Boolean"
+
+        if pd.api.types.is_numeric_dtype(
+            series
+        ):
+            return "Numeric"
+
+        if pd.api.types.is_datetime64_any_dtype(
+            series
+        ):
+            return "Date"
+
+        return "Text"
+
+    # =========================================================
+    # DETECT MEASUREMENT LEVEL
+    # =========================================================
+
+    def detect_measure(
+        self,
+        series
+    ):
+
+        # -----------------------------------------------------
+        # Boolean
+        # -----------------------------------------------------
+
+        if pd.api.types.is_bool_dtype(
+            series
+        ):
+            return "Nominal"
+
+        # -----------------------------------------------------
+        # Text
+        # -----------------------------------------------------
+
+        if not pd.api.types.is_numeric_dtype(
+            series
+        ):
+            return "Nominal"
+
+        clean = series.dropna()
+
+        if len(clean) == 0:
+            return "Unknown"
+
+        unique_values = clean.nunique()
+
+        # -----------------------------------------------------
+        # Binary numeric variable
+        # -----------------------------------------------------
+
+        if unique_values == 2:
+            return "Nominal"
+
+        # -----------------------------------------------------
+        # Likert-style variable
+        # -----------------------------------------------------
+
+        if (
+            unique_values <= 7
+            and clean.min() >= 1
+            and clean.max() <= 7
+        ):
+            return "Ordinal"
+
+        # -----------------------------------------------------
+        # Small categorical numeric variable
+        # -----------------------------------------------------
+
+        if unique_values <= 10:
+            return "Ordinal"
+
+        # -----------------------------------------------------
+        # Continuous variable
+        # -----------------------------------------------------
+
+        return "Scale"
+
+    # =========================================================
+    # SAFE NUMERIC VALUE
+    # =========================================================
+
+    def safe_numeric(
+        self,
+        value
+    ):
+
+        if pd.isna(value):
+            return None
+
+        if isinstance(
+            value,
+            (np.integer,)
+        ):
+            return int(value)
+
+        if isinstance(
+            value,
+            (np.floating,)
+        ):
+            return float(value)
+
+        return value
+
+--- FILE: app\ui\data_cleaning_dialog.py ---
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QSpinBox,
+    QVBoxLayout,
+)
+
+
+class DataCleaningDialog(QDialog):
+
+    def __init__(
+        self,
+        dataframe,
+        parent=None
+    ):
+        super().__init__(parent)
+
+        self.dataframe = dataframe
+
+        self.setWindowTitle(
+            "Data Cleaning"
+        )
+
+        self.resize(
+            500,
+            350
+        )
+
+        self.setup_ui()
+
+    # =========================================================
+    # UI
+    # =========================================================
+
+    def setup_ui(self):
+
+        layout = QVBoxLayout(
+            self
+        )
+
+        title = QLabel(
+            "Data Cleaning & Coding"
+        )
+
+        title.setStyleSheet(
+            """
+            font-size: 20px;
+            font-weight: bold;
+            """
+        )
+
+        layout.addWidget(
+            title
+        )
+
+        form = QFormLayout()
+
+        # -----------------------------------------------------
+        # Variable
+        # -----------------------------------------------------
+
+        self.variable_combo = QComboBox()
+
+        self.variable_combo.addItems(
+            [
+                str(column)
+                for column in self.dataframe.columns
+            ]
+        )
+
+        form.addRow(
+            "Variable:",
+            self.variable_combo
+        )
+
+        # -----------------------------------------------------
+        # Operation
+        # -----------------------------------------------------
+
+        self.operation_combo = QComboBox()
+
+        self.operation_combo.addItems(
+            [
+                "Rename Variable",
+                "Recode Values",
+                "Define Missing Values",
+                "Reverse Score",
+            ]
+        )
+
+        form.addRow(
+            "Operation:",
+            self.operation_combo
+        )
+
+        # -----------------------------------------------------
+        # New variable
+        # -----------------------------------------------------
+
+        self.new_variable = QLineEdit()
+
+        self.new_variable.setPlaceholderText(
+            "Optional"
+        )
+
+        form.addRow(
+            "New Variable:",
+            self.new_variable
+        )
+
+        # -----------------------------------------------------
+        # Mapping
+        # -----------------------------------------------------
+
+        self.mapping = QLineEdit()
+
+        self.mapping.setPlaceholderText(
+            "Example: 1=5,2=4,3=3,4=2,5=1"
+        )
+
+        form.addRow(
+            "Mapping:",
+            self.mapping
+        )
+
+        # -----------------------------------------------------
+        # Minimum
+        # -----------------------------------------------------
+
+        self.minimum = QSpinBox()
+
+        self.minimum.setRange(
+            -100000,
+            100000
+        )
+
+        self.minimum.setValue(
+            1
+        )
+
+        form.addRow(
+            "Minimum:",
+            self.minimum
+        )
+
+        # -----------------------------------------------------
+        # Maximum
+        # -----------------------------------------------------
+
+        self.maximum = QSpinBox()
+
+        self.maximum.setRange(
+            -100000,
+            100000
+        )
+
+        self.maximum.setValue(
+            5
+        )
+
+        form.addRow(
+            "Maximum:",
+            self.maximum
+        )
+
+        layout.addLayout(
+            form
+        )
+
+        # -----------------------------------------------------
+        # Buttons
+        # -----------------------------------------------------
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok
+            | QDialogButtonBox.Cancel
+        )
+
+        buttons.accepted.connect(
+            self.accept
+        )
+
+        buttons.rejected.connect(
+            self.reject
+        )
+
+        layout.addWidget(
+            buttons
+        )
+
+    # =========================================================
+    # GET DATA
+    # =========================================================
+
+    def get_operation_data(self):
+
+        operation = (
+            self.operation_combo
+            .currentText()
+        )
+
+        variable = (
+            self.variable_combo
+            .currentText()
+        )
+
+        new_variable = (
+            self.new_variable
+            .text()
+            .strip()
+        )
+
+        return {
+            "operation": operation,
+            "variable": variable,
+            "new_variable": new_variable,
+            "mapping": self.mapping.text().strip(),
+            "minimum": self.minimum.value(),
+            "maximum": self.maximum.value(),
+        }
+
+--- FILE: app\ui\data_page.py ---
+from pathlib import Path
+
+import pandas as pd
+
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+    QMessageBox,
+    QDialog,
+
+)
+
+from app.statistics.variable_inspector import VariableInspector
+from app.ui.data_cleaning_dialog import DataCleaningDialog
+from app.statistics.data_cleaner import DataCleaner
+
+
+class DataPage(QWidget):
+    def __init__(self, database):
+        super().__init__()
+
+        self.database = database
+
+        self.current_project_id = None
+        self.current_dataset_id = None
+        self.current_dataframe = None
+
+        self.setup_ui()
+
+    # =========================================================
+    # USER INTERFACE
+    # =========================================================
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+
+        layout.setContentsMargins(
+            40,
+            35,
+            40,
+            35,
+        )
+
+        layout.setSpacing(15)
+
+        # -----------------------------------------------------
+        # Header
+        # -----------------------------------------------------
+
+        header_layout = QHBoxLayout()
+
+        title = QLabel("Data")
+        title.setObjectName("page_title")
+
+        header_layout.addWidget(title)
+        header_layout.addStretch()
+
+        self.import_button = QPushButton(
+            "+ Import Dataset"
+        )
+
+        self.import_button.setObjectName(
+            "primary_button"
+        )
+
+        self.import_button.clicked.connect(
+            self.import_dataset
+        )
+
+        header_layout.addWidget(
+            self.import_button
+        )
+        self.clean_button = QPushButton(
+             "Data Cleaning"
+        )
+
+        self.clean_button.clicked.connect(
+            self.open_cleaning_dialog
+        )
+
+        header_layout.addWidget(
+              self.clean_button
+        )
+
+        layout.addLayout(header_layout)
+
+        # -----------------------------------------------------
+        # Dataset information
+        # -----------------------------------------------------
+
+        self.dataset_info = QLabel(
+            "No dataset imported."
+        )
+
+        self.dataset_info.setObjectName(
+            "page_subtitle"
+        )
+
+        layout.addWidget(
+            self.dataset_info
+        )
+
+        # -----------------------------------------------------
+        # Data table
+        # -----------------------------------------------------
+
+        self.tabs = QTabWidget()
+
+        # =========================================================
+        # Data View
+        # =========================================================
+
+        self.data_table = QTableWidget()
+
+        self.data_table.setObjectName(
+            "data_table"
+        )
+
+        self.data_table.setAlternatingRowColors(
+            True
+        )
+
+        self.data_table.setEditTriggers(
+            QTableWidget.NoEditTriggers
+        )
+
+        self.tabs.addTab(
+            self.data_table,
+            "Data View"
+        )
+
+        # =========================================================
+        # Variable View
+        # =========================================================
+
+        self.variable_table = QTableWidget()
+
+        self.variable_table.setObjectName(
+            "data_table"
+        )
+
+        self.variable_table.setAlternatingRowColors(
+            True
+        )
+
+        self.variable_table.setEditTriggers(
+            QTableWidget.NoEditTriggers
+        )
+
+        self.tabs.addTab(
+            self.variable_table,
+            "Variable View"
+        )
+
+        layout.addWidget(
+            self.tabs
+        )
+
+    # =========================================================
+    # SET PROJECT
+    # =========================================================
+
+    def set_project(self, project_id):
+        self.current_project_id = project_id
+
+        self.current_dataset_id = None
+        self.current_dataframe = None
+
+        self.data_table.clear()
+        self.data_table.setRowCount(0)
+        self.data_table.setColumnCount(0)
+
+        datasets = self.database.get_project_datasets(
+            project_id
+        )
+
+        if datasets:
+            dataset = datasets[0]
+
+            self.current_dataset_id = dataset["id"]
+
+            self.load_dataset(
+                dataset["file_path"]
+            )
+        else:
+            self.dataset_info.setText(
+                "No dataset imported for this project."
+            )
+
+    # =========================================================
+    # LOAD DATASET
+    # =========================================================
+
+    def load_dataset(self, file_path):
+        try:
+            dataframe = self.read_dataset(
+                file_path
+            )
+        except Exception as error:
+            self.dataset_info.setText(
+                f"Could not load dataset: {error}"
+            )
+            QMessageBox.critical(
+                self,
+                "Dataset Load Error",
+                f"Could not load the dataset.\n\n{error}",
+            )
+            return
+
+        self.current_dataframe = dataframe
+
+        self.display_dataframe(
+            dataframe
+        )
+        self.display_variable_view(
+            dataframe
+        )
+
+        self.dataset_info.setText(
+            f"Dataset: {Path(file_path).name}    |    "
+            f"Rows: {len(dataframe):,}    |    "
+            f"Columns: {len(dataframe.columns):,}"
+        )
+
+    # =========================================================
+    # IMPORT DATASET
+    # =========================================================
+
+    def import_dataset(self):
+        if self.current_project_id is None:
+            QMessageBox.warning(
+                self,
+                "No Project Selected",
+                "Please select a project before importing data.",
+            )
+
+            return
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Dataset",
+            "",
+            "Data Files (*.xlsx *.xls *.csv)",
+        )
+
+        if not file_path:
+            return
+
+        try:
+            dataframe = self.read_dataset(
+                file_path
+            )
+
+        except Exception as error:
+            QMessageBox.critical(
+                self,
+                "Import Error",
+                f"Could not import the dataset.\n\n{error}",
+            )
+
+            return
+
+        filename = Path(file_path).name
+
+        file_extension = (
+            Path(file_path)
+            .suffix
+            .lower()
+            .replace(".", "")
+        )
+
+        dataset_id = self.database.create_dataset(
+            project_id=self.current_project_id,
+            filename=filename,
+            file_path=file_path,
+            file_type=file_extension,
+            row_count=len(dataframe),
+            column_count=len(dataframe.columns),
+        )
+
+        self.current_dataset_id = dataset_id
+        self.current_dataframe = dataframe
+
+        self.display_dataframe(
+            dataframe
+        )
+        self.display_variable_view(
+            dataframe
+        )
+
+        self.dataset_info.setText(
+            f"Dataset: {filename}    |    "
+            f"Rows: {len(dataframe):,}    |    "
+            f"Columns: {len(dataframe.columns):,}"
+        )
+
+        QMessageBox.information(
+            self,
+            "Import Successful",
+            "The dataset was imported successfully.",
+        )
+
+    # =========================================================
+    # READ DATASET
+    # =========================================================
+
+    def read_dataset(self, file_path):
+        extension = (
+            Path(file_path)
+            .suffix
+            .lower()
+        )
+
+        if extension == ".csv":
+            return pd.read_csv(
+                file_path
+            )
+
+        if extension in [".xlsx", ".xls"]:
+            return pd.read_excel(
+                file_path
+            )
+
+        raise ValueError(
+            "Unsupported file type."
+        )
+
+    # =========================================================
+    # DISPLAY DATAFRAME
+    # =========================================================
+
+    def display_dataframe(self, dataframe):
+        self.data_table.clear()
+
+        self.data_table.setRowCount(
+            len(dataframe)
+        )
+
+        self.data_table.setColumnCount(
+            len(dataframe.columns)
+        )
+
+        # Column headers
+        self.data_table.setHorizontalHeaderLabels(
+            [
+                str(column)
+                for column in dataframe.columns
+            ]
+        )
+
+        # Data
+        for row_index in range(
+            len(dataframe)
+        ):
+            for column_index in range(
+                len(dataframe.columns)
+            ):
+                value = dataframe.iloc[
+                    row_index,
+                    column_index
+                ]
+
+                if pd.isna(value):
+                    text = ""
+                else:
+                    text = str(value)
+
+                item = QTableWidgetItem(
+                    text
+                )
+
+                self.data_table.setItem(
+                    row_index,
+                    column_index,
+                    item,
+                )
+
+        # Resize columns
+        self.data_table.resizeColumnsToContents()
+
+    def display_variable_view(
+        self,
+        dataframe
+    ):
+
+        inspector = VariableInspector(
+            dataframe
+        )
+
+        variables = inspector.inspect()
+
+        columns = [
+            "Name",
+            "Label",
+            "Type",
+            "Measure",
+            "Missing",
+            "Unique",
+            "Count",
+            "Minimum",
+            "Maximum",
+            "Mean",
+            "Std. Dev."
+        ]
+
+        self.variable_table.clear()
+
+        self.variable_table.setRowCount(
+            len(variables)
+        )
+
+        self.variable_table.setColumnCount(
+            len(columns)
+        )
+
+        self.variable_table.setHorizontalHeaderLabels(
+            columns
+        )
+
+        for row_index, variable in enumerate(
+            variables
+        ):
+
+            values = [
+                variable["name"],
+                variable["label"],
+                variable["type"],
+                variable["measure"],
+                variable["missing"],
+                variable["unique"],
+                variable["count"],
+                variable["minimum"],
+                variable["maximum"],
+                variable["mean"],
+                variable["std"],
+            ]
+
+            for column_index, value in enumerate(
+                values
+            ):
+
+                if value is None:
+                    text = ""
+                else:
+                    text = str(value)
+
+                item = QTableWidgetItem(
+                    text
+                )
+
+                self.variable_table.setItem(
+                    row_index,
+                    column_index,
+                    item
+                )
+
+        self.variable_table.resizeColumnsToContents()
+
+    def open_cleaning_dialog(self):
+
+        if self.current_dataframe is None:
+
+            QMessageBox.warning(
+                self,
+                "No Dataset",
+                "Please import a dataset first.",
+            )
+
+            return
+
+        dialog = DataCleaningDialog(
+            self.current_dataframe,
+            self
+        )
+
+        if dialog.exec() != QDialog.Accepted:
+            return
+
+        data = dialog.get_operation_data()
+
+        cleaner = DataCleaner(
+            self.current_dataframe
+        )
+
+        try:
+
+            operation = data["operation"]
+
+            variable = data["variable"]
+
+            new_variable = (
+                data["new_variable"]
+                or None
+            )
+
+            if operation == "Rename Variable":
+
+                if not new_variable:
+                    raise ValueError(
+                        "Enter a new variable name."
+                    )
+
+                dataframe = cleaner.rename_variable(
+                    variable,
+                    new_variable
+                )
+
+            elif operation == "Recode Values":
+
+                mapping = self.parse_mapping(
+                    data["mapping"]
+                )
+
+                dataframe = cleaner.recode_values(
+                    variable,
+                    mapping,
+                    new_variable
+                )
+
+            elif operation == "Define Missing Values":
+
+                mapping = self.parse_mapping(
+                    data["mapping"]
+                )
+
+                missing_values = list(
+                    mapping.keys()
+                )
+
+                dataframe = cleaner.define_missing_values(
+                    variable,
+                    missing_values
+                )
+
+            elif operation == "Reverse Score":
+
+                dataframe = cleaner.reverse_score(
+                    variable,
+                    data["minimum"],
+                    data["maximum"],
+                    new_variable
+                )
+
+            else:
+
+                raise ValueError(
+                    "Unknown operation."
+                )
+
+            self.current_dataframe = dataframe
+
+            self.display_dataframe(
+                dataframe
+            )
+
+            self.display_variable_view(
+                dataframe
+            )
+
+            QMessageBox.information(
+                self,
+                "Operation Complete",
+                "The data was updated successfully.",
+            )
+
+        except Exception as error:
+
+            QMessageBox.critical(
+                self,
+                "Cleaning Error",
+                str(error),
+            )
+
+    def parse_mapping(self, text):
+
+        if not text.strip():
+
+            raise ValueError(
+                "Enter a mapping."
+            )
+
+        mapping = {}
+
+        parts = text.split(",")
+
+        for part in parts:
+
+            if "=" not in part:
+
+                raise ValueError(
+                    f"Invalid mapping: {part}"
+                )
+
+            old, new = part.split(
+                "=",
+                1
+            )
+
+            old = old.strip()
+            new = new.strip()
+
+            try:
+                old_value = float(old)
+            except ValueError:
+                old_value = old
+
+            try:
+                new_value = float(new)
+            except ValueError:
+                new_value = new
+
+            if isinstance(
+                old_value,
+                float
+            ) and old_value.is_integer():
+
+                old_value = int(
+                    old_value
+                )
+
+            if isinstance(
+                new_value,
+                float
+            ) and new_value.is_integer():
+
+                new_value = int(
+                    new_value
+                )
+
+            mapping[
+                old_value
+            ] = new_value
+
+        return mapping
+
+def reverse_score(
+    self,
+    variable,
+    minimum=1,
+    maximum=5,
+    new_variable=None
+):
+
+    if variable not in self.dataframe.columns:
+        raise ValueError(
+            f"Variable '{variable}' does not exist."
+        )
+
+    target = (
+        new_variable
+        if new_variable
+        else variable
+    )
+
+    self.dataframe[target] = (
+        maximum
+        + minimum
+        - self.dataframe[variable]
+    )
+
+    return self.dataframe
+
+--- FILE: app\ui\main_window.py ---
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from app.database.database import Database
+from app.ui.data_page import DataPage
+from app.ui.projects_page import ProjectsPage
+
+
+class MainWindow(QMainWindow):
+
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle(
+            "Research Analysis System"
+        )
+
+        self.resize(
+            1300,
+            800
+        )
+
+        # Database
+        self.database = Database()
+
+        # Build interface
+        self.setup_ui()
+
+    # =========================================================
+    # SETUP UI
+    # =========================================================
+
+    def setup_ui(self):
+
+        # -----------------------------------------------------
+        # Main container
+        # -----------------------------------------------------
+
+        central_widget = QWidget()
+
+        self.setCentralWidget(
+            central_widget
+        )
+
+        main_layout = QHBoxLayout(
+            central_widget
+        )
+
+        main_layout.setContentsMargins(
+            0,
+            0,
+            0,
+            0
+        )
+
+        main_layout.setSpacing(0)
+
+        # -----------------------------------------------------
+        # Sidebar
+        # -----------------------------------------------------
+
+        sidebar = QFrame()
+
+        sidebar.setFixedWidth(
+            230
+        )
+
+        sidebar.setObjectName(
+            "sidebar"
+        )
+
+        sidebar_layout = QVBoxLayout(
+            sidebar
+        )
+
+        sidebar_layout.setContentsMargins(
+            15,
+            20,
+            15,
+            20
+        )
+
+        # -----------------------------------------------------
+        # Application title
+        # -----------------------------------------------------
+
+        title = QLabel(
+            "Research\nAnalysis System"
+        )
+
+        title.setObjectName(
+            "app_title"
+        )
+
+        title.setAlignment(
+            Qt.AlignCenter
+        )
+
+        sidebar_layout.addWidget(
+            title
+        )
+
+        sidebar_layout.addSpacing(
+            30
+        )
+
+        # -----------------------------------------------------
+        # Navigation
+        # -----------------------------------------------------
+
+        self.navigation = QListWidget()
+
+        self.navigation.setObjectName(
+            "navigation"
+        )
+
+        navigation_items = [
+            "Dashboard",
+            "Projects",
+            "Data",
+            "Analysis",
+            "Results",
+            "Chapter Four",
+            "Export",
+        ]
+
+        for item_name in navigation_items:
+
+            item = QListWidgetItem(
+                item_name
+            )
+
+            self.navigation.addItem(
+                item
+            )
+
+        sidebar_layout.addWidget(
+            self.navigation
+        )
+
+        sidebar_layout.addStretch()
+
+        # -----------------------------------------------------
+        # Version
+        # -----------------------------------------------------
+
+        version = QLabel(
+            "Version 0.1.0"
+        )
+
+        version.setAlignment(
+            Qt.AlignCenter
+        )
+
+        version.setObjectName(
+            "version"
+        )
+
+        sidebar_layout.addWidget(
+            version
+        )
+
+        # -----------------------------------------------------
+        # Main content area
+        # -----------------------------------------------------
+
+        self.pages = QStackedWidget()
+
+        # =====================================================
+        # Dashboard
+        # =====================================================
+
+        self.create_dashboard_page()
+
+        # =====================================================
+        # Projects
+        # =====================================================
+
+        self.projects_page = ProjectsPage(
+            self.database
+        )
+
+        self.pages.addWidget(
+            self.projects_page
+        )
+
+        self.projects_page.project_selected.connect(
+            self.open_project
+        )
+
+        # =====================================================
+        # Data
+        # =====================================================
+
+        self.data_page = DataPage(
+            self.database
+        )
+
+        self.pages.addWidget(
+            self.data_page
+        )
+
+        # =====================================================
+        # Analysis
+        # =====================================================
+
+        self.create_placeholder_page(
+            "Analysis",
+            "Statistical analysis will appear here.",
+        )
+
+        # =====================================================
+        # Results
+        # =====================================================
+
+        self.create_placeholder_page(
+            "Results",
+            "Statistical results will appear here.",
+        )
+
+        # =====================================================
+        # Chapter Four
+        # =====================================================
+
+        self.create_placeholder_page(
+            "Chapter Four",
+            "Chapter Four generation will appear here.",
+        )
+
+        # =====================================================
+        # Export
+        # =====================================================
+
+        self.create_placeholder_page(
+            "Export",
+            "Export tools will appear here.",
+        )
+
+        # -----------------------------------------------------
+        # Add widgets to main layout
+        # -----------------------------------------------------
+
+        main_layout.addWidget(
+            sidebar
+        )
+
+        main_layout.addWidget(
+            self.pages
+        )
+
+        # -----------------------------------------------------
+        # Navigation event
+        # -----------------------------------------------------
+
+        self.navigation.currentRowChanged.connect(
+            self.change_page
+        )
+
+        # Start on Dashboard
+        self.navigation.setCurrentRow(
+            0
+        )
+
+        # -----------------------------------------------------
+        # Styling
+        # -----------------------------------------------------
+
+        self.setStyleSheet("""
+
+            QMainWindow {
+                background-color: #f5f7fa;
+            }
+
+            #sidebar {
+                background-color: #172033;
+            }
+
+            #app_title {
+                color: white;
+                font-size: 22px;
+                font-weight: bold;
+            }
+
+            #navigation {
+                background-color: transparent;
+                border: none;
+                outline: none;
+                color: #cbd5e1;
+                font-size: 15px;
+            }
+
+            #navigation::item {
+                padding: 14px;
+                margin: 3px 0;
+                border-radius: 6px;
+            }
+
+            #navigation::item:hover {
+                background-color: #25314a;
+            }
+
+            #navigation::item:selected {
+                background-color: #2563eb;
+                color: white;
+            }
+
+            #version {
+                color: #64748b;
+                font-size: 12px;
+            }
+
+            #page_title {
+                color: #172033;
+                font-size: 28px;
+                font-weight: bold;
+            }
+
+            #page_subtitle {
+                color: #64748b;
+                font-size: 15px;
+            }
+
+            #card {
+                background-color: white;
+                border-radius: 10px;
+                padding: 20px;
+            }
+
+            #card_title {
+                color: #64748b;
+                font-size: 14px;
+            }
+
+            #card_value {
+                color: #172033;
+                font-size: 28px;
+                font-weight: bold;
+            }
+
+            #primary_button {
+                background-color: #2563eb;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 18px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+
+            #primary_button:hover {
+                background-color: #1d4ed8;
+            }
+
+            #project_list {
+                background-color: white;
+                border: none;
+                border-radius: 10px;
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            #project_list::item {
+                padding: 15px;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            #project_list::item:selected {
+                background-color: #eff6ff;
+                color: #172033;
+            }
+
+            #data_table {
+                background-color: white;
+                border: 1px solid #e5e7eb;
+                gridline-color: #e5e7eb;
+                font-size: 13px;
+            }
+
+        """)
+
+    # =========================================================
+    # DASHBOARD
+    # =========================================================
+
+    def create_dashboard_page(self):
+
+        page = QWidget()
+
+        layout = QVBoxLayout(
+            page
+        )
+
+        layout.setContentsMargins(
+            40,
+            35,
+            40,
+            35
+        )
+
+        layout.setSpacing(
+            20
+        )
+
+        title = QLabel(
+            "Dashboard"
+        )
+
+        title.setObjectName(
+            "page_title"
+        )
+
+        layout.addWidget(
+            title
+        )
+
+        subtitle = QLabel(
+            "Manage your research projects and statistical analysis."
+        )
+
+        subtitle.setObjectName(
+            "page_subtitle"
+        )
+
+        layout.addWidget(
+            subtitle
+        )
+
+        layout.addSpacing(
+            15
+        )
+
+        # -----------------------------------------------------
+        # Statistics cards
+        # -----------------------------------------------------
+
+        cards_layout = QHBoxLayout()
+
+        cards_layout.setSpacing(
+            20
+        )
+
+        cards_layout.addWidget(
+            self.create_stat_card(
+                "Projects",
+                "0"
+            )
+        )
+
+        cards_layout.addWidget(
+            self.create_stat_card(
+                "Analyses",
+                "0"
+            )
+        )
+
+        cards_layout.addWidget(
+            self.create_stat_card(
+                "Completed",
+                "0"
+            )
+        )
+
+        layout.addLayout(
+            cards_layout
+        )
+
+        layout.addStretch()
+
+        self.pages.addWidget(
+            page
+        )
+
+    # =========================================================
+    # STATISTICS CARD
+    # =========================================================
+
+    def create_stat_card(
+        self,
+        title,
+        value
+    ):
+
+        card = QFrame()
+
+        card.setObjectName(
+            "card"
+        )
+
+        layout = QVBoxLayout(
+            card
+        )
+
+        title_label = QLabel(
+            title
+        )
+
+        title_label.setObjectName(
+            "card_title"
+        )
+
+        value_label = QLabel(
+            value
+        )
+
+        value_label.setObjectName(
+            "card_value"
+        )
+
+        layout.addWidget(
+            title_label
+        )
+
+        layout.addWidget(
+            value_label
+        )
+
+        return card
+
+    # =========================================================
+    # PLACEHOLDER PAGE
+    # =========================================================
+
+    def create_placeholder_page(
+        self,
+        title_text,
+        description
+    ):
+
+        page = QWidget()
+
+        layout = QVBoxLayout(
+            page
+        )
+
+        layout.setContentsMargins(
+            40,
+            35,
+            40,
+            35
+        )
+
+        title = QLabel(
+            title_text
+        )
+
+        title.setObjectName(
+            "page_title"
+        )
+
+        subtitle = QLabel(
+            description
+        )
+
+        subtitle.setObjectName(
+            "page_subtitle"
+        )
+
+        layout.addWidget(
+            title
+        )
+
+        layout.addWidget(
+            subtitle
+        )
+
+        layout.addStretch()
+
+        self.pages.addWidget(
+            page
+        )
+
+    # =========================================================
+    # NAVIGATION
+    # =========================================================
+
+    def change_page(
+        self,
+        index
+    ):
+
+        self.pages.setCurrentIndex(
+            index
+        )
+
+    # =========================================================
+    # OPEN PROJECT
+    # =========================================================
+
+    def open_project(
+        self,
+        project_id
+    ):
+
+        self.data_page.set_project(
+            project_id
+        )
+
+        # Data is navigation item 2
+        self.navigation.setCurrentRow(
+            2
+        )
+
+    # =========================================================
+    # CLOSE APPLICATION
+    # =========================================================
+
+    def closeEvent(
+        self,
+        event
+    ):
+
+        self.database.close()
+
+        event.accept()
+
+--- FILE: app\ui\projects_page.py ---
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from app.ui.project_dialog import ProjectDialog
+
+
+class ProjectsPage(QWidget):
+    project_selected = Signal(int)
+
+    def __init__(self, database):
+        super().__init__()
+
+        self.database = database
+
+        self.setup_ui()
+        self.load_projects()
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+
+        # Header
+        header_layout = QHBoxLayout()
+
+        title = QLabel("Projects")
+        title.setObjectName("page_title")
+
+        header_layout.addWidget(title)
+        header_layout.addStretch()
+
+        new_button = QPushButton("+ New Project")
+        new_button.setObjectName("primary_button")
+        new_button.clicked.connect(self.create_project)
+
+        header_layout.addWidget(new_button)
+
+        layout.addLayout(header_layout)
+
+        subtitle = QLabel(
+            "Create and manage your research projects."
+        )
+        subtitle.setObjectName("page_subtitle")
+
+        layout.addWidget(subtitle)
+        layout.addSpacing(20)
+
+        # Project list
+        self.project_list = QListWidget()
+        self.project_list.setObjectName("project_list")
+        self.project_list.itemClicked.connect(self.handle_project_click)
+
+        layout.addWidget(self.project_list)
+
+    def handle_project_click(self, item):
+        project_id = item.data(Qt.UserRole)
+
+        if project_id is not None:
+            self.project_selected.emit(project_id)
+
+    def load_projects(self):
+        self.project_list.clear()
+
+        projects = self.database.get_projects()
+
+        if not projects:
+            item = QListWidgetItem(
+                "No projects yet. Click '+ New Project' to create one."
+            )
+
+            item.setTextAlignment(Qt.AlignCenter)
+
+            self.project_list.addItem(item)
+
+            return
+
+        for project in projects:
+            text = (
+                f"{project['name']}\n"
+                f"{project['research_title'] or 'No research title'}\n"
+                f"Status: {project['status']}"
+            )
+
+            item = QListWidgetItem(text)
+            item.setData(Qt.UserRole, project["id"])
+
+            self.project_list.addItem(item)
+
+    def create_project(self):
+        dialog = ProjectDialog(self)
+
+        if dialog.exec():
+            data = dialog.get_project_data()
+
+            self.database.create_project(**data)
+
+            self.load_projects()
+
+            QMessageBox.information(
+                self,
+                "Project Created",
+                "The research project was created successfully.",
+            )
+
+--- FILE: app\ui\project_dialog.py ---
+from PySide6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFormLayout,
+    QLineEdit,
+    QVBoxLayout,
+)
+
+
+class ProjectDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Create New Project")
+        self.resize(500, 350)
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+
+        form = QFormLayout()
+
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText(
+            "e.g. Social Media and Academic Performance"
+        )
+
+        self.title_input = QLineEdit()
+        self.title_input.setPlaceholderText(
+            "Full research title"
+        )
+
+        self.researcher_input = QLineEdit()
+        self.researcher_input.setPlaceholderText(
+            "Researcher's name"
+        )
+
+        self.institution_input = QLineEdit()
+        self.institution_input.setPlaceholderText(
+            "University / Institution"
+        )
+
+        self.department_input = QLineEdit()
+        self.department_input.setPlaceholderText(
+            "Department"
+        )
+
+        self.significance_input = QDoubleSpinBox()
+        self.significance_input.setRange(0.001, 0.999)
+        self.significance_input.setSingleStep(0.01)
+        self.significance_input.setValue(0.05)
+        self.significance_input.setDecimals(3)
+
+        form.addRow("Project Name *", self.name_input)
+        form.addRow("Research Title", self.title_input)
+        form.addRow("Researcher", self.researcher_input)
+        form.addRow("Institution", self.institution_input)
+        form.addRow("Department", self.department_input)
+        form.addRow(
+            "Significance Level",
+            self.significance_input,
+        )
+
+        layout.addLayout(form)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Save |
+            QDialogButtonBox.Cancel
+        )
+
+        buttons.accepted.connect(self.validate_and_accept)
+        buttons.rejected.connect(self.reject)
+
+        layout.addWidget(buttons)
+
+    def validate_and_accept(self):
+        if not self.name_input.text().strip():
+            self.name_input.setFocus()
+            return
+
+        self.accept()
+
+    def get_project_data(self):
+        return {
+            "name": self.name_input.text().strip(),
+            "research_title": self.title_input.text().strip(),
+            "researcher": self.researcher_input.text().strip(),
+            "institution": self.institution_input.text().strip(),
+            "department": self.department_input.text().strip(),
+            "significance_level": self.significance_input.value(),
+        }
+
+--- FILE: tests\test_descriptive_statistics.py ---
+import pandas as pd
+import pytest
+
+from app.statistics.descriptive_statistics import (
+    DescriptiveStatistics
+)
+
+
+# =========================================================
+# TEST DATA PATH
+# =========================================================
+
+DATA_FILE = "test_research_data.csv"
+
+
+# =========================================================
+# LOAD REAL RESEARCH DATA
+# =========================================================
+
+@pytest.fixture
+def research_dataframe():
+
+    dataframe = pd.read_csv(
+        DATA_FILE
+    )
+
+    return dataframe
+
+
+# =========================================================
+# DATASET LOADING TEST
+# =========================================================
+
+def test_research_data_loads(
+    research_dataframe
+):
+
+    assert isinstance(
+        research_dataframe,
+        pd.DataFrame
+    )
+
+    assert len(
+        research_dataframe
+    ) == 40
+
+    assert len(
+        research_dataframe.columns
+    ) == 10
+
+
+# =========================================================
+# COLUMN TEST
+# =========================================================
+
+def test_research_columns(
+    research_dataframe
+):
+
+    expected_columns = [
+        "ID",
+        "Gender",
+        "Age",
+        "Education",
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Income",
+    ]
+
+    assert (
+        research_dataframe.columns.tolist()
+        == expected_columns
+    )
+
+
+# =========================================================
+# DESCRIPTIVE STATISTICS ENGINE
+# =========================================================
+
+@pytest.fixture
+def statistics_engine(
+    research_dataframe
+):
+
+    return DescriptiveStatistics(
+        research_dataframe
+    )
+
+
+# =========================================================
+# DATASET OVERVIEW
+# =========================================================
+
+def test_dataset_overview(
+    statistics_engine
+):
+
+    overview = (
+        statistics_engine
+        .dataset_overview()
+    )
+
+    assert overview["Rows"] == 40
+
+    assert overview["Columns"] == 10
+
+    assert overview[
+        "Numeric Variables"
+    ] == 10
+
+    assert overview[
+        "Categorical Variables"
+    ] == 0
+
+
+# =========================================================
+# NUMERIC VARIABLES
+# =========================================================
+
+def test_numeric_variables(
+    statistics_engine
+):
+
+    variables = (
+        statistics_engine
+        .numeric_variables()
+    )
+
+    assert "Age" in variables
+
+    assert "Income" in variables
+
+    assert "Q1" in variables
+
+    assert "Q5" in variables
+
+    assert len(variables) == 10
+
+
+# =========================================================
+# AGE SUMMARY
+# =========================================================
+
+def test_age_summary(
+    statistics_engine
+):
+
+    result = (
+        statistics_engine
+        .variable_summary("Age")
+    )
+
+    assert result["N"] == 40
+
+    assert result["Missing"] == 0
+
+    assert result["Minimum"] == 20
+
+    assert result["Maximum"] == 38
+
+    assert result["Mean"] == 27.5
+
+
+# =========================================================
+# INCOME SUMMARY
+# =========================================================
+
+def test_income_summary(
+    statistics_engine
+):
+
+    result = (
+        statistics_engine
+        .variable_summary("Income")
+    )
+
+    assert result["N"] == 40
+
+    assert result["Missing"] == 0
+
+    assert result["Minimum"] == 55000
+
+    assert result["Maximum"] == 165000
+
+
+# =========================================================
+# QUESTIONNAIRE ITEM SUMMARY
+# =========================================================
+
+def test_questionnaire_items(
+    statistics_engine
+):
+
+    result = (
+        statistics_engine
+        .numeric_summary(
+            [
+                "Q1",
+                "Q2",
+                "Q3",
+                "Q4",
+                "Q5",
+            ]
+        )
+    )
+
+    assert len(result) == 5
+
+    assert (
+        result["N"] == 40
+    ).all()
+
+    assert (
+        result["Missing"] == 0
+    ).all()
+
+
+# =========================================================
+# GENDER FREQUENCY
+# =========================================================
+
+def test_gender_frequency(
+    statistics_engine
+):
+
+    result = (
+        statistics_engine
+        .frequency_table("Gender")
+    )
+
+    assert "Value" in result.columns
+
+    assert "Frequency" in result.columns
+
+    assert "Percent" in result.columns
+
+    assert "Valid Percent" in result.columns
+
+    assert "Cumulative Percent" in result.columns
+
+
+# =========================================================
+# GENDER COUNTS
+# =========================================================
+
+def test_gender_counts(
+    statistics_engine
+):
+
+    result = (
+        statistics_engine
+        .frequency_table("Gender")
+    )
+
+    gender_1 = result[
+        result["Value"] == 1
+    ]
+
+    gender_2 = result[
+        result["Value"] == 2
+    ]
+
+    assert int(
+        gender_1["Frequency"].iloc[0]
+    ) == 20
+
+    assert int(
+        gender_2["Frequency"].iloc[0]
+    ) == 20
+
+
+# =========================================================
+# EDUCATION FREQUENCY
+# =========================================================
+
+def test_education_frequency(
+    statistics_engine
+):
+
+    result = (
+        statistics_engine
+        .frequency_table("Education")
+    )
+
+    assert len(result) == 4
+
+
+# =========================================================
+# MISSING VALUE SUMMARY
+# =========================================================
+
+def test_missing_summary(
+    statistics_engine
+):
+
+    result = (
+        statistics_engine
+        .missing_summary()
+    )
+
+    assert len(result) == 10
+
+    assert (
+        result["Missing"] == 0
+    ).all()
+
+
+# =========================================================
+# FULL REPORT
+# =========================================================
+
+def test_full_report(
+    statistics_engine
+):
+
+    report = (
+        statistics_engine
+        .full_report()
+    )
+
+    assert "overview" in report
+
+    assert "numeric_summary" in report
+
+    assert "missing_summary" in report
+
+    assert "frequency_tables" in report
+
+
+# =========================================================
+# FULL REPORT CONTENT
+# =========================================================
+
+def test_full_report_content(
+    statistics_engine
+):
+
+    report = (
+        statistics_engine
+        .full_report()
+    )
+
+    numeric_summary = (
+        report["numeric_summary"]
+    )
+
+    assert len(
+        numeric_summary
+    ) == 10
+
+    frequency_tables = (
+        report["frequency_tables"]
+    )
+
+    assert "Gender" in (
+        frequency_tables
+    )
+
+    assert "Education" in (
+        frequency_tables
+    )
+
+--- FILE: tests\test_general_datasets.py ---
+import pandas as pd
+
+from app.statistics.descriptive_statistics import (
+    DescriptiveStatistics,
+)
+
+
+def test_engine_accepts_different_research_datasets():
+    education_data = pd.DataFrame({
+        "School": ["A", "B", "A", "C"],
+        "Score": [60, 75, 80, 85],
+    })
+
+    business_data = pd.DataFrame({
+        "Department": ["HR", "IT", "IT", "Sales"],
+        "Revenue": [1200, 2500, 3000, 1800],
+    })
+
+    education_engine = DescriptiveStatistics(
+        education_data
+    )
+
+    business_engine = DescriptiveStatistics(
+        business_data
+    )
+
+    assert education_engine.variable_summary(
+        "Score"
+    )["Mean"] == 75
+
+    assert business_engine.variable_summary(
+        "Revenue"
+    )["Mean"] == 2125
+
+    assert "School" in (
+        education_engine.frequency_tables(["School"])
+    )
+
+    assert "Department" in (
+        business_engine.frequency_tables(["Department"])
+    )
+
+
+def test_engine_handles_different_column_names():
+    data = pd.DataFrame({
+        "Monthly_Expenses": [100, 200, 300],
+        "Customer_Type": ["New", "Returning", "New"],
+    })
+
+    engine = DescriptiveStatistics(data)
+
+    assert engine.variable_summary(
+        "Monthly_Expenses"
+    )["Mean"] == 200
+
+    assert "New" in engine.frequency_table(
+        "Customer_Type"
+    )["Value"].tolist()
+
+
+def test_engine_handles_missing_values():
+    data = pd.DataFrame({
+        "Score": [10, 20, None, 40],
+        "Group": ["A", "B", None, "A"],
+    })
+
+    engine = DescriptiveStatistics(data)
+
+    summary = engine.variable_summary("Score")
+
+    assert summary["N"] == 3
+    assert summary["Missing"] == 1
+
+    frequencies = engine.frequency_table("Group")
+
+    assert frequencies["Frequency"].sum() == 4
+
+
+def test_variable_detection_respects_column_dtypes():
+    data = pd.DataFrame({
+        "Count": pd.Series([1, 2], dtype="int64"),
+        "Rate": pd.Series([0.25, 0.75], dtype="float64"),
+        "Optional_Count": pd.Series([1, None], dtype="Int64"),
+        "Numeric_Text": ["1", "2"],
+        "Group": ["control", "treatment"],
+        "Enabled": [True, False],
+        "Observed_At": pd.to_datetime([
+            "2025-01-01",
+            "2025-01-02",
+        ]),
+    })
+
+    engine = DescriptiveStatistics(data)
+
+    assert engine.numeric_variables() == [
+        "Count",
+        "Rate",
+        "Optional_Count",
+    ]
+    assert engine.categorical_variables() == [
+        "Numeric_Text",
+        "Group",
+        "Enabled",
+        "Observed_At",
+    ]
+
+
+def test_numeric_text_can_be_summarized_without_being_detected_as_numeric():
+    data = pd.DataFrame({
+        "Score_Text": ["10", "invalid", None, "20"],
+    })
+
+    engine = DescriptiveStatistics(data)
+
+    assert engine.numeric_variables() == []
+    assert engine.categorical_variables() == ["Score_Text"]
+
+    summary = engine.variable_summary("Score_Text")
+    assert summary["N"] == 2
+    assert summary["Missing"] == 2
+    assert summary["Mean"] == 15
+
+
+def test_empty_and_all_missing_columns_are_classified_and_summarized():
+    data = pd.DataFrame({
+        "Empty_Number": pd.Series(dtype="float64"),
+        "Missing_Number": pd.Series([pd.NA, pd.NA], dtype="Float64"),
+        "Missing_Label": pd.Series([None, None], dtype="object"),
+    })
+
+    engine = DescriptiveStatistics(data)
+
+    assert engine.numeric_variables() == [
+        "Empty_Number",
+        "Missing_Number",
+    ]
+    assert engine.categorical_variables() == ["Missing_Label"]
+
+    summary = engine.variable_summary("Missing_Number")
+    assert summary["N"] == 0
+    assert summary["Missing"] == 2
+
+
+def test_empty_frequency_table_keeps_its_documented_columns():
+    data = pd.DataFrame({
+        "Group": pd.Series(dtype="object"),
+    })
+
+    result = DescriptiveStatistics(data).frequency_table("Group")
+
+    assert result.columns.tolist() == [
+        "Value",
+        "Frequency",
+        "Percent",
+        "Valid Percent",
+        "Cumulative Percent",
+    ]
+    assert result.empty
+
+
+def test_full_report_frequencies_include_coded_categories_not_continuous_values():
+    data = pd.DataFrame({
+        "Group_Code": [1, 2] * 6,
+        "Measurement": [float(value) for value in range(12)],
+        "Region": ["north", "south", "north", "west"] * 3,
+    })
+
+    report = DescriptiveStatistics(data).full_report()
+
+    assert set(report["frequency_tables"]) == {
+        "Group_Code",
+        "Region",
+    }
+
+========== 4. REQUIREMENTS AND CONFIGURATION ==========
+
+--- FILE: requirements.txt ---
+PySide6
+pandas
+openpyxl
+pyreadstat
+scipy
+statsmodels
+matplotlib
+seaborn
+python-docx
+
+--- FILE: README.md ---
+
+========== 5. DATABASE FILES AND SQLITE SCHEMAS ==========
+
+--- DATABASE: app\database\research_analysis.db ---
+Integrity: ok
+Foreign keys: 0
+
+[TABLE] datasets
+CREATE TABLE datasets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                row_count INTEGER DEFAULT 0,
+                column_count INTEGER DEFAULT 0,
+                imported_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (project_id)
+                    REFERENCES projects(id)
+                    ON DELETE CASCADE
+            )
+  COLUMN: (0, 'id', 'INTEGER', 0, None, 1)
+  COLUMN: (1, 'project_id', 'INTEGER', 1, None, 0)
+  COLUMN: (2, 'filename', 'TEXT', 1, None, 0)
+  COLUMN: (3, 'file_path', 'TEXT', 1, None, 0)
+  COLUMN: (4, 'file_type', 'TEXT', 1, None, 0)
+  COLUMN: (5, 'row_count', 'INTEGER', 0, '0', 0)
+  COLUMN: (6, 'column_count', 'INTEGER', 0, '0', 0)
+  COLUMN: (7, 'imported_at', 'TEXT', 0, 'CURRENT_TIMESTAMP', 0)
+  FOREIGN KEY: (0, 0, 'projects', 'project_id', 'id', 'NO ACTION', 'CASCADE', 'NONE')
+
+[TABLE] projects
+CREATE TABLE projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                research_title TEXT,
+                researcher TEXT,
+                institution TEXT,
+                department TEXT,
+                significance_level REAL DEFAULT 0.05,
+                status TEXT DEFAULT 'New',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+  COLUMN: (0, 'id', 'INTEGER', 0, None, 1)
+  COLUMN: (1, 'name', 'TEXT', 1, None, 0)
+  COLUMN: (2, 'research_title', 'TEXT', 0, None, 0)
+  COLUMN: (3, 'researcher', 'TEXT', 0, None, 0)
+  COLUMN: (4, 'institution', 'TEXT', 0, None, 0)
+  COLUMN: (5, 'department', 'TEXT', 0, None, 0)
+  COLUMN: (6, 'significance_level', 'REAL', 0, '0.05', 0)
+  COLUMN: (7, 'status', 'TEXT', 0, "'New'", 0)
+  COLUMN: (8, 'created_at', 'TEXT', 0, 'CURRENT_TIMESTAMP', 0)
+  COLUMN: (9, 'updated_at', 'TEXT', 0, 'CURRENT_TIMESTAMP', 0)
+
+========== 6. GIT STATUS ==========
+git : fatal: not a git repository (or any of the 
+parent directories): .git
+At line:1 char:1
++ git -C $root status --short --branch 2>&1 |
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (fatal: n 
+   ot a gi...ectories): .git:String) [], RemoteExcep  
+  tion
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+========== 7. INSPECTION COMPLETE ==========
