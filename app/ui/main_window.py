@@ -1,4 +1,6 @@
-from PySide6.QtCore import Qt, QSettings, QTimer
+from pathlib import Path
+
+from PySide6.QtCore import QSize, Qt, QSettings, QTimer
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -10,6 +12,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QStackedWidget,
+    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
@@ -25,6 +28,31 @@ from app.ui.projects_page import ProjectsPage
 from app.ui.research_questions_page import ResearchQuestionsPage
 from app.ui.results_page import ResultsPage
 from app.ui.qualitative_page import QualitativePage
+from app.ui.time_series_window import TimeSeriesWindow
+
+
+class EvenlySpacedNavigation(QListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.model().rowsInserted.connect(self._redistribute_items)
+        self.model().rowsRemoved.connect(self._redistribute_items)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._redistribute_items()
+
+    def _redistribute_items(self, *_args):
+        count = self.count()
+        available_height = self.viewport().height()
+        if not count or available_height <= 0:
+            return
+
+        row_height, extra_pixels = divmod(available_height, count)
+        for row in range(count):
+            height = row_height + (1 if row < extra_pixels else 0)
+            self.item(row).setSizeHint(QSize(0, height))
 
 
 class MainWindow(QMainWindow):
@@ -47,6 +75,9 @@ class MainWindow(QMainWindow):
         self.dashboard_metric_labels = {}
         self.workflow_step = -1
         self.export_done = False
+        self.last_page_index = 0
+        self.time_series_nav_index = 10
+        self.help_nav_index = 11
         self.workflow_pages = [2, 3, 4, 3, 5, 6, 8]
         self.workflow_titles = [
             "Import your dataset",
@@ -114,6 +145,7 @@ class MainWindow(QMainWindow):
             15,
             20
         )
+        sidebar_layout.setSpacing(0)
 
         # -----------------------------------------------------
         # Application title
@@ -135,21 +167,15 @@ class MainWindow(QMainWindow):
             title
         )
 
-        sidebar_layout.addSpacing(
-            30
-        )
-
         # -----------------------------------------------------
         # Navigation
         # -----------------------------------------------------
 
-        self.navigation = QListWidget()
+        self.navigation = EvenlySpacedNavigation()
 
         self.navigation.setObjectName(
             "navigation"
         )
-        self.navigation.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.navigation.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         navigation_items = [
             "Dashboard",
@@ -162,6 +188,8 @@ class MainWindow(QMainWindow):
             "Chapter Four",
             "Export",
             "Qualitative",
+            "Time-Series Analysis",
+            "Help",
         ]
 
         for item_name in navigation_items:
@@ -175,10 +203,9 @@ class MainWindow(QMainWindow):
             )
 
         sidebar_layout.addWidget(
-            self.navigation
+            self.navigation,
+            1
         )
-
-        sidebar_layout.addStretch()
 
         # -----------------------------------------------------
         # Version
@@ -330,6 +357,26 @@ class MainWindow(QMainWindow):
         self.qualitative_page = QualitativePage(self.database)
         self.pages.addWidget(self.qualitative_page)
 
+        self.help_page = QWidget()
+        help_layout = QVBoxLayout(self.help_page)
+        help_layout.setContentsMargins(24, 20, 24, 20)
+        help_title = QLabel("Application Help")
+        help_title.setObjectName("app_title")
+        help_layout.addWidget(help_title)
+        self.help_browser = QTextBrowser()
+        self.help_browser.setOpenExternalLinks(True)
+        readme_path = Path(__file__).resolve().parents[2] / "README.md"
+        if readme_path.is_file():
+            self.help_browser.setMarkdown(
+                readme_path.read_text(encoding="utf-8")
+            )
+        else:
+            self.help_browser.setPlainText(
+                "The README user guide is missing. Restore README.md beside the application."
+            )
+        help_layout.addWidget(self.help_browser, 1)
+        self.pages.addWidget(self.help_page)
+
         self.create_workflow_footer()
 
         # -----------------------------------------------------
@@ -362,6 +409,8 @@ class MainWindow(QMainWindow):
         saved_project = self.settings.value("last_project_id", type=int)
         if saved_project is not None and self.database.get_project(saved_project) is not None:
             self.open_project(saved_project)
+        else:
+            self.update_workflow_ui()
 
         # -----------------------------------------------------
         # Styling
@@ -392,8 +441,8 @@ class MainWindow(QMainWindow):
             }
 
             #navigation::item {
-                padding: 14px;
-                margin: 3px 0;
+                padding: 8px 12px;
+                margin: 2px 0;
                 border-radius: 6px;
             }
 
@@ -730,13 +779,26 @@ class MainWindow(QMainWindow):
         self.workflow_continue.clicked.connect(self.continue_workflow)
         buttons.addWidget(self.workflow_continue)
         layout.addLayout(buttons)
-        self.workflow_footer.setVisible(False)
+        # Keep the workflow controls visible even before a project is opened.
+        # The disabled state explains what to do next instead of making the
+        # guided workflow appear to be missing.
+        self.workflow_footer.setVisible(True)
 
     def update_workflow_ui(self):
         active = self.workflow_step >= 0 and self.data_page.current_project_id is not None
-        self.workflow_footer.setVisible(active)
         if not active:
+            self.workflow_footer.setVisible(True)
+            self.workflow_heading.setText("Guided workflow")
+            self.workflow_explanation.setText("Open or create a project to begin.")
+            self.workflow_progress.setValue(0)
+            self.workflow_back.setEnabled(False)
+            self.workflow_save.setEnabled(False)
+            self.workflow_continue.setText("Continue")
+            self.workflow_continue.setEnabled(False)
             return
+        self.workflow_footer.setVisible(True)
+        self.workflow_save.setEnabled(True)
+        self.workflow_continue.setEnabled(True)
         self.workflow_heading.setText(
             f"Step {self.workflow_step + 1} of {len(self.workflow_pages)}: "
             f"{self.workflow_titles[self.workflow_step]}"
@@ -855,14 +917,27 @@ class MainWindow(QMainWindow):
         if project_id == self.data_page.current_project_id and self.workflow_step == 1:
             QTimer.singleShot(250, lambda: self.set_workflow_step(2))
 
+    def open_time_series_window(self):
+        if not hasattr(self, "time_series_window") or self.time_series_window is None:
+            self.time_series_window = TimeSeriesWindow(self.database, self)
+        self.time_series_window.show()
+        self.time_series_window.raise_()
+        self.time_series_window.activateWindow()
+
     def change_page(
         self,
         index
     ):
-
-        self.pages.setCurrentIndex(
-            index
-        )
+        if index == self.time_series_nav_index:
+            self.open_time_series_window()
+            self.navigation.blockSignals(True)
+            self.navigation.setCurrentRow(self.last_page_index)
+            self.navigation.blockSignals(False)
+            return
+        page_index = index if index < self.time_series_nav_index else index - 1
+        if 0 <= page_index < self.pages.count():
+            self.last_page_index = index
+            self.pages.setCurrentIndex(page_index)
         if index == 0:
             self.refresh_dashboard_metrics()
 

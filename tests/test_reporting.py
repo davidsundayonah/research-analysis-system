@@ -1,4 +1,5 @@
 import os
+import re
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -17,6 +18,7 @@ from app.reporting import ChapterFourExporter, ChapterFourGenerator
 from app.statistics.statistical_engine import StatisticalEngine
 from app.statistics.statistical_result import StatisticalResult
 from app.statistics.statistical_workflow import StatisticalWorkflow
+from app.statistics.time_series_analysis import analyze_time_series
 from app.ui.main_window import MainWindow
 from app.ui.export_page import ExportPage
 
@@ -221,7 +223,11 @@ def test_chapter_four_covers_multiple_questions_and_flags_stale_missing_results(
     assert any("Historical analysis run" in paragraph for paragraph in by_question[second_question].paragraphs)
     assert any("No saved analysis" in paragraph for paragraph in by_question[third_question].paragraphs)
     assert any("no longer matches the saved analysis snapshot" in warning for warning in report.warnings)
-    assert any(table.source.get("section") == "frequency_tables" for table in report.sections[1].tables)
+    descriptive = next(
+        section for section in report.sections
+        if section.title == "Descriptive and demographic analysis"
+    )
+    assert any(table.source.get("section") == "frequency_tables" for table in descriptive.tables)
 
     for run_id in context["run_ids"]:
         stored = context["database"].decode_analysis_run(
@@ -231,6 +237,143 @@ def test_chapter_four_covers_multiple_questions_and_flags_stale_missing_results(
             ).fetchone()
         )
         assert stored["result"] == context["original_run_json"][run_id]
+
+
+def test_chapter_four_includes_time_series_results_and_source_provenance(
+    reporting_context,
+):
+    context = reporting_context
+    data = pd.DataFrame(
+        {
+            "Year": range(1991, 2026),
+            "Unemployment_Rate": [
+                3.8, 3.8, 4.0, 4.1, 4.2, 4.0, 4.0, 3.9, 4.0, 4.0,
+                3.9, 3.7, 3.6, 3.6, 3.7, 3.7, 3.8, 3.8, 3.8, 3.7,
+                3.8, 3.8, 3.7, 3.9, 4.1, 4.5, 4.8, 5.1, 5.2, 5.7,
+                5.4, 3.8, 3.1, 3.0, 3.1,
+            ],
+        }
+    )
+    result = analyze_time_series(
+        data,
+        "Year",
+        "Unemployment_Rate",
+        forecast_horizon=2,
+        test_size=4,
+        deterministic_specification="Constant and trend",
+    )
+    provenance = {
+        "data_source": "National Labour Statistics",
+        "indicator_name": "Unemployment rate",
+        "methodology": "Annual unemployment rate series",
+        "source_url": "https://example.test/unemployment",
+        "units": "Percent",
+        "downloaded_date": "2026-11-05",
+    }
+    context["database"].save_time_series_analysis(
+        context["project_id"],
+        context["first_dataset_id"],
+        provenance,
+        result,
+    )
+
+    report = ChapterFourGenerator(context["database"]).generate(context["project_id"])
+    section = next(
+        section for section in report.sections
+        if section.title == "Time-series analysis and data provenance"
+    )
+    preview = "\n".join(section.paragraphs)
+
+    assert "National Labour Statistics" in preview
+    assert "Measurement methodology: Annual unemployment rate series." in preview
+    assert "Unemployment rate" in preview
+    assert "p = " in preview
+    assert "Chronological forecast comparison" in preview
+    assert "Trend stationarity" in preview or "trend stationarity" in preview
+    assert re.search(r"\d+\.\d{3}(?:\D|$)", preview)
+    assert re.search(r"\d+\.\d{4,}", preview) is None
+
+
+def test_report_guide_and_question_labels_make_exports_traceable(reporting_context):
+    context = reporting_context
+    database = context["database"]
+    schema_id = database.create_questionnaire_schema(
+        context["project_id"], "Study questionnaire"
+    )
+    database.add_questionnaire_question(
+        schema_id,
+        "How many hours do you study each week?",
+        "hours",
+        question_type="integer",
+        data_type="integer",
+        measure="scale",
+    )
+    database.approve_questionnaire_schema(schema_id)
+
+    report = ChapterFourGenerator(database).generate(context["project_id"])
+    guide = next(section for section in report.sections if section.title == "How to read this report")
+    descriptive = next(
+        section for section in report.sections
+        if section.title == "Descriptive and demographic analysis"
+    )
+    labels = [
+        cell
+        for table in descriptive.tables
+        for row in table.rows
+        for cell in row
+    ]
+
+    assert any("sample size (N)" in paragraph for paragraph in guide.paragraphs)
+    assert any("ADF and Phillips-Perron" in paragraph for paragraph in guide.paragraphs)
+    assert any("themes, codes, definitions, and saved excerpts" in paragraph for paragraph in guide.paragraphs)
+    assert any("How many hours do you study each week? [hours]" in cell for cell in labels)
+
+
+def test_chapter_four_preserves_three_decimals_for_correlation_estimates(reporting_context):
+    context = reporting_context
+    data = pd.read_csv(context["first_path"])
+    question_id = context["database"].create_research_question(
+        context["project_id"],
+        "Are study hours associated with scores?",
+        code="RQ4",
+        design_type="association",
+    )
+    hypothesis_id = context["database"].create_hypothesis(
+        context["project_id"],
+        question_id,
+        null_hypothesis="There is no monotonic association.",
+        alternative_hypothesis="There is a monotonic association.",
+    )
+    context["database"].set_question_variable(
+        context["project_id"], question_id, context["first_dataset_id"], "hours", "predictor"
+    )
+    context["database"].set_question_variable(
+        context["project_id"], question_id, context["first_dataset_id"], "score", "outcome"
+    )
+    result = StatisticalWorkflow(context["database"]).run_analysis(
+        context["project_id"],
+        question_id,
+        hypothesis_id,
+        context["first_dataset_id"],
+        data,
+        "correlation",
+        {
+            "first_variable": "hours",
+            "second_variable": "score",
+            "method": "spearman",
+            "alpha": 0.05,
+        },
+    )
+    assert result.status == "ok"
+
+    report = ChapterFourGenerator(context["database"]).generate(context["project_id"])
+    section = next(
+        section for section in report.sections
+        if section.source_question_id == question_id
+    )
+    table = next(table for table in section.tables if table.title == "Spearman rank correlation")
+
+    assert re.fullmatch(r"-?\d+\.\d{3}", table.rows[0][3])
 
 
 def test_docx_and_xlsx_exports_preserve_structure_and_analysis_traceability(
@@ -268,11 +411,12 @@ def test_docx_and_xlsx_exports_preserve_structure_and_analysis_traceability(
     assert any("Introduction" in paragraph for paragraph in paragraphs)
     assert any("Research question findings: RQ1" in paragraph for paragraph in paragraphs)
     assert any("Summary of findings" in paragraph for paragraph in paragraphs)
+    assert any("How to read this report" in paragraph for paragraph in paragraphs)
     assert str(context["run_ids"][0]) in document_text
     assert len(document.tables) >= 4
 
     workbook = load_workbook(xlsx_path, data_only=True)
-    assert {"Overview", "Descriptive", "RQ1", "RQ2", "RQ3", "Warnings"}.issubset(workbook.sheetnames)
+    assert {"Overview", "How to read this report", "Descriptive", "RQ1", "RQ2", "RQ3", "Warnings"}.issubset(workbook.sheetnames)
     all_cells = [
         str(cell.value)
         for sheet in workbook.worksheets
@@ -280,7 +424,10 @@ def test_docx_and_xlsx_exports_preserve_structure_and_analysis_traceability(
         for cell in row
         if cell.value is not None
     ]
-    assert any("Source run" in cell and str(context["run_ids"][0]) in cell for cell in all_cells)
+    assert any(
+        "Source: saved analysis run" in cell and str(context["run_ids"][0]) in cell
+        for cell in all_cells
+    )
     assert any("Historical" in cell or "no longer matches" in cell for cell in all_cells)
 
     for run_id in context["run_ids"]:

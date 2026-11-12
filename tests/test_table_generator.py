@@ -192,6 +192,37 @@ def test_descriptive_and_demographic_adapters_reuse_supplied_values():
     assert report_tables[1].source["variable"] == "gender"
 
 
+def test_tables_resolve_questionnaire_variable_and_likert_labels():
+    result = {
+        "test": "spearman_correlation",
+        "variables": ["C2", "B1"],
+        "sample_size": 200,
+        "statistic": 0.42,
+        "p_value": 0.01,
+        "confidence_interval": None,
+        "details": {},
+    }
+
+    table = TableGenerator().from_result(
+        result,
+        variable_labels={
+            "C2": "I have attended hypertension awareness seminars.",
+            "B1": "Hypertension is characterized by persistently high blood pressure.",
+        },
+        value_labels={"B1": {1: "Strongly Disagree", 2: "Disagree", 3: "Agree", 4: "Strongly Agree"}},
+    )
+
+    assert table.rows[0][0] == "I have attended hypertension awareness seminars."
+    assert table.rows[0][1] == "Hypertension is characterized by persistently high blood pressure."
+
+    frequency = TableGenerator().from_frequency_table(
+        [{"Value": 4, "Frequency": 120, "Percent": 60}],
+        variable="B1",
+        value_labels={"B1": {4: "Strongly Agree"}},
+    )
+    assert frequency.rows[0][0] == "Strongly Agree"
+
+
 def test_report_scoped_numbering_is_stable_and_independent():
     generator = TableGenerator()
     numbering = TableNumberingContext("chapter-four")

@@ -34,6 +34,27 @@ def dispose_widgets(app, *widgets):
     app.processEvents()
 
 
+def test_guided_workflow_footer_is_visible_before_and_after_project_selection(qt_app, tmp_path):
+    database = Database(tmp_path / "workflow.db")
+    window = MainWindow(database)
+    window.show()
+    qt_app.processEvents()
+
+    assert window.workflow_footer.isVisible()
+    assert not window.workflow_continue.isEnabled()
+    assert "Open or create a project" in window.workflow_explanation.text()
+
+    project_id = database.create_project("Workflow study")
+    window.open_project(project_id)
+    qt_app.processEvents()
+
+    assert window.workflow_footer.isVisible()
+    assert window.workflow_continue.isVisible()
+    assert window.workflow_continue.isEnabled()
+    dispose_widgets(qt_app, window)
+    database.close()
+
+
 def test_question_dialog_rejects_empty_question_text(qt_app):
     dialog = ResearchQuestionDialog()
 

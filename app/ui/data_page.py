@@ -851,28 +851,14 @@ class DataPage(QWidget):
     def save_revision(self, source_dataset_id, dataframe):
         source = self.database.get_dataset(source_dataset_id)
         if source is None:
-            return
-        snapshot_dir = self.database.database_dir / "datasets"
-        snapshot_dir.mkdir(parents=True, exist_ok=True)
-        snapshot_path = snapshot_dir / f"{uuid4().hex}.csv"
-        dataframe.to_csv(snapshot_path, index=False)
-        revision_number = int(source["revision_number"] or 1) + 1
-        revision_id = self.database.create_dataset(
-            project_id=self.current_project_id,
-            filename=f"{Path(source['filename']).stem} (revision {revision_number}).csv",
-            file_path=str(snapshot_path),
-            file_type="csv",
-            row_count=len(dataframe),
-            column_count=len(dataframe.columns),
-            source_path=source["source_path"] or source["file_path"],
-            content_hash=self.file_hash(snapshot_path),
-            revision_number=revision_number,
-            revision_of=source_dataset_id,
-        )
-        self.database.clone_dataset_links(source_dataset_id, revision_id)
+            raise ValueError("Source dataset does not exist.")
+        if source["project_id"] != self.current_project_id:
+            raise ValueError("Source dataset does not belong to the active project.")
+        revision_id = self.database.create_dataset_revision(source_dataset_id, dataframe)
         self.current_dataset_id = revision_id
         self.refresh_dataset_selector(revision_id)
         self.publish_dataset_state()
+        return revision_id
 
     def parse_mapping(self, text):
 

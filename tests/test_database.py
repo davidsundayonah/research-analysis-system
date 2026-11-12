@@ -1,5 +1,6 @@
 import sqlite3
 
+import pandas as pd
 import pytest
 
 from app.database.database import Database
@@ -90,6 +91,36 @@ def test_variable_metadata_round_trip_and_revision_clone(tmp_path):
     database.close()
 
 
+def test_managed_dataframe_revision_preserves_source_and_indexes_new_variables(tmp_path):
+    database = Database(tmp_path / "frame-revision.db")
+    project_id = database.create_project("Time series study")
+    source_id = database.create_dataset(
+        project_id, "annual.csv", "annual.csv", "csv", 2, 2
+    )
+    database.replace_dataset_variables(
+        source_id,
+        [("Year", "int64"), ("Output", "float64")],
+    )
+    dataframe = pd.DataFrame(
+        {"Year": [2020, 2021], "Output": [10.0, 12.0], "Output_change": [None, 2.0]}
+    )
+
+    revision_id = database.create_dataset_revision(source_id, dataframe, label="Time series")
+    revision = database.get_dataset(revision_id)
+    persisted = pd.read_csv(revision["file_path"])
+
+    assert revision["revision_of"] == source_id
+    assert revision["revision_number"] == 2
+    assert database.get_dataset(source_id)["filename"] == "annual.csv"
+    assert persisted["Output_change"].iloc[1] == 2.0
+    assert {row["name"] for row in database.get_dataset_variables(revision_id)} == {
+        "Year",
+        "Output",
+        "Output_change",
+    }
+    database.close()
+
+
 def test_database_enforces_foreign_keys_and_cascades_project_deletes(database):
     project_id = database.create_project("Research project")
     dataset_id = database.create_dataset(
@@ -172,7 +203,7 @@ def test_migration_preserves_existing_database_data(tmp_path):
 
     assert database.connection.execute(
         "PRAGMA user_version"
-    ).fetchone()[0] == 12
+    ).fetchone()[0] == 14
     assert database.get_project(17)["name"] == "Existing project"
     assert database.get_dataset(23)["filename"] == "old.csv"
     assert database.connection.execute(

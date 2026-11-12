@@ -1,0 +1,27 @@
+name: Windows desktop release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - run: python -m pytest -q
+      - run: python -m PyInstaller --clean --noconfirm research_analysis.spec
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Research Analysis System ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/ResearchAnalysis.exe

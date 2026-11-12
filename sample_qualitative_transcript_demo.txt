@@ -1,0 +1,13 @@
+SIMULATED TRAINING TRANSCRIPT — NOT A REAL PARTICIPANT AND NOT PART OF test_research_data.csv
+
+Participant: DEMO-01
+Source: Simulated practice excerpt created only to demonstrate the application's manual qualitative workflow.
+
+Interviewer: How do you use social media while studying?
+Participant: I check the class group for updates, but sometimes I keep scrolling longer than I planned.
+
+Interviewer: What makes it easier or harder to concentrate?
+Participant: Notifications distract me when I am trying to finish an assignment.
+
+Interviewer: Does social media ever help with your studies?
+Participant: Tutorial videos and class group discussions can help me understand a topic.

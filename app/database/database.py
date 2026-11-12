@@ -3,12 +3,14 @@ import json
 import os
 import shutil
 import json
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 
 class Database:
-    def __init__(self, database_path=None):
+    def __init__(self, database_path=None, *, check_same_thread=True):
         self.database_path = Path(
             database_path
             if database_path is not None
@@ -18,7 +20,11 @@ class Database:
         self.database_dir = self.database_path.parent
         self.database_dir.mkdir(parents=True, exist_ok=True)
 
-        self.connection = sqlite3.connect(self.database_path, timeout=30)
+        self.connection = sqlite3.connect(
+            self.database_path,
+            timeout=30,
+            check_same_thread=check_same_thread,
+        )
         self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
         self.connection.execute("PRAGMA busy_timeout = 30000")
@@ -50,6 +56,8 @@ class Database:
             self._create_qualitative_schema,
             self._add_analysis_governance_schema,
             self._add_qualitative_governance_schema,
+            self._create_time_series_analysis_schema,
+            self._create_web_accounts_schema,
         )
         version = self.connection.execute(
             "PRAGMA user_version"
@@ -424,6 +432,65 @@ class Database:
                 FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
             )
         """)
+
+    def _create_time_series_analysis_schema(self):
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS time_series_analyses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                dataset_id INTEGER,
+                data_source TEXT NOT NULL DEFAULT '',
+                indicator_name TEXT NOT NULL DEFAULT '',
+                methodology TEXT NOT NULL DEFAULT '',
+                source_url TEXT NOT NULL DEFAULT '',
+                units TEXT NOT NULL DEFAULT '',
+                downloaded_date TEXT NOT NULL DEFAULT '',
+                result_json TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY(dataset_id) REFERENCES datasets(id) ON DELETE SET NULL
+            )
+        """)
+        self.connection.execute(
+            "CREATE INDEX IF NOT EXISTS time_series_analyses_project "
+            "ON time_series_analyses(project_id, created_at, id)"
+        )
+
+    def _create_web_accounts_schema(self):
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS web_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+                password_hash TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS web_sessions (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                csrf_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES web_users(id) ON DELETE CASCADE
+            )
+        """)
+        self.connection.execute(
+            "CREATE INDEX IF NOT EXISTS web_sessions_user ON web_sessions(user_id)"
+        )
+        project_columns = {
+            row["name"]
+            for row in self.connection.execute("PRAGMA table_info(projects)")
+        }
+        if "owner_user_id" not in project_columns:
+            self.connection.execute(
+                "ALTER TABLE projects ADD COLUMN owner_user_id INTEGER "
+                "REFERENCES web_users(id) ON DELETE CASCADE"
+            )
+        self.connection.execute(
+            "CREATE INDEX IF NOT EXISTS projects_owner_updated "
+            "ON projects(owner_user_id, updated_at DESC)"
+        )
 
     def _create_questionnaire_schema(self):
         """Create the project-scoped questionnaire and paper-entry store.
@@ -898,6 +965,7 @@ class Database:
         department="",
         significance_level=0.05,
         multiplicity_method="holm",
+        owner_user_id=None,
     ):
         name = str(name or "").strip()
         if not name:
@@ -918,9 +986,10 @@ class Database:
                 institution,
                 department,
                 significance_level,
-                multiplicity_method
+                multiplicity_method,
+                owner_user_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
@@ -930,6 +999,7 @@ class Database:
                 department,
                 significance_level,
                 multiplicity_method,
+                owner_user_id,
             ),
         )
 
@@ -937,7 +1007,16 @@ class Database:
 
         return cursor.lastrowid
 
-    def get_projects(self):
+    def get_projects(self, owner_user_id=None):
+        if owner_user_id is not None:
+            return self.connection.execute(
+                """
+                SELECT * FROM projects
+                WHERE owner_user_id = ?
+                ORDER BY updated_at DESC
+                """,
+                (owner_user_id,),
+            ).fetchall()
         cursor = self.connection.execute(
             """
             SELECT *
@@ -948,7 +1027,21 @@ class Database:
 
         return cursor.fetchall()
 
-    def get_dashboard_metrics(self):
+    def get_dashboard_metrics(self, owner_user_id=None):
+        if owner_user_id is not None:
+            row = self.connection.execute(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM projects WHERE owner_user_id = ?) AS projects,
+                    (SELECT COUNT(*) FROM analysis_runs r
+                     JOIN projects p ON p.id = r.project_id
+                     WHERE p.owner_user_id = ?) AS analyses,
+                    (SELECT COUNT(*) FROM projects
+                     WHERE owner_user_id = ? AND lower(trim(status)) = 'completed') AS completed
+                """,
+                (owner_user_id, owner_user_id, owner_user_id),
+            ).fetchone()
+            return {name: int(row[name]) for name in ("projects", "analyses", "completed")}
         row = self.connection.execute(
             """
             SELECT
@@ -974,6 +1067,66 @@ class Database:
         )
 
         return cursor.fetchone()
+
+    def get_project_for_user(self, project_id, owner_user_id):
+        return self.connection.execute(
+            """
+            SELECT * FROM projects
+            WHERE id = ? AND owner_user_id = ?
+            """,
+            (project_id, owner_user_id),
+        ).fetchone()
+
+    def create_web_user(self, email, password_hash):
+        cursor = self.connection.execute(
+            "INSERT INTO web_users (email, password_hash) VALUES (?, ?)",
+            (str(email).strip().lower(), password_hash),
+        )
+        self.connection.commit()
+        return cursor.lastrowid
+
+    def get_web_user_by_email(self, email):
+        return self.connection.execute(
+            "SELECT * FROM web_users WHERE email = ? COLLATE NOCASE",
+            (str(email).strip(),),
+        ).fetchone()
+
+    def get_web_user(self, user_id):
+        return self.connection.execute(
+            "SELECT id, email, created_at FROM web_users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+
+    def create_web_session(self, token_hash, user_id, csrf_hash, expires_at):
+        with self.connection:
+            self.connection.execute(
+                "DELETE FROM web_sessions WHERE expires_at <= CURRENT_TIMESTAMP"
+            )
+            self.connection.execute(
+                """
+                INSERT INTO web_sessions (token_hash, user_id, csrf_hash, expires_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (token_hash, user_id, csrf_hash, expires_at),
+            )
+
+    def get_web_session(self, token_hash):
+        return self.connection.execute(
+            """
+            SELECT s.token_hash, s.user_id, s.csrf_hash, s.expires_at,
+                   u.email
+            FROM web_sessions s
+            JOIN web_users u ON u.id = s.user_id
+            WHERE s.token_hash = ? AND s.expires_at > CURRENT_TIMESTAMP
+            """,
+            (token_hash,),
+        ).fetchone()
+
+    def delete_web_session(self, token_hash):
+        with self.connection:
+            self.connection.execute(
+                "DELETE FROM web_sessions WHERE token_hash = ?", (token_hash,)
+            )
 
     def delete_project(self, project_id):
         datasets = self.get_project_datasets(project_id)
@@ -1046,6 +1199,67 @@ class Database:
             )
 
         return cursor.lastrowid
+
+    def create_dataset_revision(self, source_dataset_id, dataframe, *, label=None):
+        source = self.get_dataset(source_dataset_id)
+        if source is None:
+            raise ValueError("Source dataset does not exist.")
+        revision_number = int(source["revision_number"] or 1) + 1
+        prefix = str(label or Path(source["filename"]).stem).strip() or "Dataset"
+        revision_id = self.create_dataset_from_frame(
+            source["project_id"],
+            f"{prefix} (revision {revision_number}).csv",
+            dataframe,
+            source_path=source["source_path"] or source["file_path"],
+            revision_number=revision_number,
+            revision_of=source_dataset_id,
+        )
+        self.clone_dataset_links(source_dataset_id, revision_id)
+        self.replace_dataset_variables(
+            revision_id,
+            [(str(column), str(dtype)) for column, dtype in dataframe.dtypes.items()],
+        )
+        return revision_id
+
+    def create_dataset_from_frame(
+        self,
+        project_id,
+        filename,
+        dataframe,
+        *,
+        source_path=None,
+        revision_number=1,
+        revision_of=None,
+    ):
+        self._require_project(project_id)
+        if dataframe is None or not hasattr(dataframe, "to_csv"):
+            raise TypeError("A tabular dataframe is required to create a managed dataset.")
+
+        snapshot_dir = self.database_dir / "datasets"
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
+        snapshot_path = snapshot_dir / f"{uuid4().hex}.csv"
+        dataframe.to_csv(snapshot_path, index=False)
+        digest = hashlib.sha256()
+        with snapshot_path.open("rb") as snapshot:
+            for block in iter(lambda: snapshot.read(1024 * 1024), b""):
+                digest.update(block)
+        revision_id = self.create_dataset(
+            project_id=project_id,
+            filename=filename,
+            file_path=str(snapshot_path),
+            file_type="csv",
+            row_count=len(dataframe),
+            column_count=len(dataframe.columns),
+            source_path=source_path or str(snapshot_path),
+            content_hash=digest.hexdigest(),
+            revision_number=revision_number,
+            revision_of=revision_of,
+        )
+        self.replace_dataset_variables(
+            revision_id,
+            [(str(column), str(dtype)) for column, dtype in dataframe.dtypes.items()],
+        )
+        return revision_id
 
     def get_project_datasets(self, project_id):
         cursor = self.connection.execute(
@@ -1832,6 +2046,106 @@ class Database:
             (json.dumps(result, sort_keys=True, allow_nan=False), hypothesis_decision, run_id),
         )
         self.connection.commit()
+
+    def save_time_series_analysis(self, project_id, dataset_id, metadata, result):
+        self._require_project(project_id)
+        if dataset_id is not None:
+            dataset = self.get_dataset(dataset_id)
+            if dataset is None or dataset["project_id"] != project_id:
+                raise ValueError("The time-series dataset must belong to the selected project.")
+        if result.get("analysis_type") in {"exogenous", "multivariate"}:
+            stored_result = result
+        else:
+            stored_result = {
+                "date_column": result["date_column"],
+                "value_column": result["value_column"],
+                "date_range": [result["start_date"], result["end_date"]],
+                "frequency": result["frequency_label"],
+                "analysis_type": result.get("analysis_type", "univariate"),
+                "roles": result.get("roles", {}),
+                "recommendations": result.get("recommendations", {}),
+                "preprocessing_operations": result.get("preprocessing_operations", []),
+                "model_specification": result["model_specification"],
+                "stationarity_scope": result["stationarity_scope"],
+                "stationarity_tests": result["stationarity_tests"],
+                "stationarity_assessment": result["stationarity_assessment"],
+                "stationarity_interpretations": result["stationarity_interpretations"],
+                "academic_interpretation": result["academic_interpretation"],
+                "academic_interpretations": result["academic_interpretations"],
+                "model_evaluation_design": result["model_evaluation_design"],
+                "time_series_plot": result["time_series_plot"],
+                "trend_values": result["trend_values"],
+                "fitted_values": result["fitted_values"],
+                "fitted_index": result["fitted_index"],
+                "correlogram": result["correlogram"],
+                "residual_plot": result["residual_plot"],
+                "seasonal_components": result["seasonal_components"],
+                "decomposition_plot": result.get("decomposition_plot", {}),
+                "preprocessing_operations": result.get("preprocessing_operations", []),
+                "evaluation": result["evaluation"],
+                "model_comparison": result["model_comparison"],
+                "prediction_interval": result["prediction_interval"],
+                "forecast": [
+                    {
+                        "period": period,
+                        "value": value,
+                        "lower": lower,
+                        "upper": upper,
+                    }
+                    for period, value, lower, upper in zip(
+                        result["forecast_index"],
+                        result["forecast_values"],
+                        result["forecast_lower"],
+                        result["forecast_upper"],
+                    )
+                ],
+                "diagnostics": result["diagnostics"],
+                "diagnostic_warnings": result["diagnostic_warnings"],
+                "convergence_status": result["convergence_status"],
+                "warnings": result["validation"]["issues"],
+            }
+        fields = (
+            "data_source",
+            "indicator_name",
+            "methodology",
+            "source_url",
+            "units",
+            "downloaded_date",
+        )
+        values = [str(metadata.get(field, "") or "").strip() for field in fields]
+        result_json = json.dumps(stored_result, sort_keys=True, allow_nan=False)
+        with self.connection:
+            cursor = self.connection.execute(
+                """
+                INSERT INTO time_series_analyses (
+                    project_id, dataset_id, data_source, indicator_name,
+                    methodology, source_url, units, downloaded_date, result_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (project_id, dataset_id, *values, result_json),
+            )
+        return cursor.lastrowid
+
+    def get_project_time_series_analyses(self, project_id):
+        rows = self.connection.execute(
+            """
+            SELECT * FROM time_series_analyses
+            WHERE project_id = ?
+            ORDER BY created_at, id
+            """,
+            (project_id,),
+        ).fetchall()
+        analyses = []
+        for row in rows:
+            analysis = dict(row)
+            try:
+                analysis["result"] = json.loads(analysis.pop("result_json"))
+            except (TypeError, json.JSONDecodeError) as error:
+                raise ValueError(
+                    f"Saved time-series analysis {analysis['id']} is corrupted."
+                ) from error
+            analyses.append(analysis)
+        return analyses
 
     @staticmethod
     def decode_analysis_run(row):

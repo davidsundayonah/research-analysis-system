@@ -1,6 +1,26 @@
 # Research Analysis System
 
-This application helps you enter, check, analyse, and report research data.
+This application helps you enter, check, analyse, and report research data. This guide is written as a working manual: follow the steps in order for your first real study, and use the later sections as a reference when you need a specific task.
+
+> **Need help or want to suggest an update?** WhatsApp: [+234(0)7026792486](https://wa.me/2347026792486). In the desktop app, open **Help** in the left navigation for this guide.
+
+## Quick demonstration with the included files
+
+The repository includes practice datasets. They are for learning the workflow; do not cite their results as findings from a real study. For a real study, create a separate project and import only that study's approved data.
+
+To open a preloaded walkthrough in the desktop app, run this from the repository folder:
+
+```powershell
+.\.venv\Scripts\python.exe tools\launch_guided_demo.py
+```
+
+It creates or reuses **Guided walkthrough — sample data (practice only)** in the app database, saves the two practice CSVs and a simulated transcript, runs descriptive, association, regression, and time-series examples, then opens the qualitative and time-series screens. The quantitative CSV remains the active project dataset; the time-series module opens its separate annual file. This is a persistent practice project, separate from any real study.
+
+1. **Quantitative:** Open `test_research_data.csv` in a project. Start with descriptive summaries, then try a Spearman correlation between `SM_Hours` and `GPA`, followed by a one-predictor regression. Review warnings and diagnostics; this is test data, and association does not establish causation.
+2. **Qualitative:** The quantitative CSV has no interview or open-ended text, so it cannot support qualitative coding. To see the coding screens without misrepresenting the survey, use [`sample_qualitative_transcript_demo.txt`](sample_qualitative_transcript_demo.txt). It is simulated practice text, not a response from the CSV. Save it as a transcript, create codes and themes, and code exact excerpts. For research, replace it with consented, de-identified source text and your own codebook.
+3. **Time series:** Open `time_series_example.csv` in **Time-Series Analysis**. Select `Year` as the date and `Unemployment_Rate` as the outcome for a univariate example. The other economic-looking columns are explicitly synthetic. Review variable mappings, recommendations, stationarity checks, validation results, diagnostics, and forecasts before interpreting results.
+
+The **Help** page in the application displays this README, so these steps and the support link are also available inside the running app. The in-app Help page reads this file directly, so improving the README improves the guide inside the desktop app too.
 
 You can use it for:
 
@@ -21,6 +41,19 @@ You do not need to be a statistician to start. Follow the matching guide below a
 | You have one blank questionnaire document | [C. Build from a document](#c-build-from-a-blank-document) |
 | You conducted interviews | [D. Analyse interviews](#d-analyse-interviews) |
 | You have both questionnaire and interview data | [E. Mixed-methods study](#e-mixed-methods-study) |
+
+## Contents
+
+- [First real study: follow this sequence](#first-real-study-follow-this-sequence)
+- [Install and open the application](#2-install-and-open-the-application)
+- [Type paper questionnaires](#a-type-paper-questionnaires)
+- [Import a spreadsheet](#b-import-a-spreadsheet)
+- [Build a questionnaire from a document](#c-build-from-a-blank-document)
+- [Analyse interviews](#d-analyse-interviews)
+- [Analyse time-series data](#24-time-series-analysis)
+- [Choose a research design and analysis](#4-choosing-a-research-design)
+- [Understand and report results](#5-understanding-results)
+- [Troubleshoot common problems](#8-common-problems)
 
 ## 1. The five ideas you need to know
 
@@ -56,6 +89,58 @@ python -m venv .venv
 
 The application stores projects, database records, dataset snapshots, logs, and backups in `%APPDATA%\ResearchAnalysis`.
 
+### Open the in-app guide
+
+Select **Help** at the bottom of the desktop application's left sidebar to browse this complete guide inside the app. It includes the start-up steps, paper-entry and spreadsheet workflows, qualitative analysis, time-series analysis, reporting, troubleshooting, and data-protection guidance. The guide is included in the Windows desktop build.
+
+## 2.1 Windows desktop build
+
+The desktop application remains the primary full-featured interface. After installing the development dependencies, build a portable Windows executable with:
+
+```powershell
+.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
+.\build_windows.ps1
+```
+
+The output is `dist\ResearchAnalysis.exe`. Test it on a clean Windows machine before distribution. Packaged applications still write user data to `%APPDATA%\ResearchAnalysis`; they do not write a database into the installation folder.
+
+## 2.2 Official download page
+
+The website is a download page only. It does not expose desktop projects, accounts, analysis, or data management in a browser. It serves `dist\ResearchAnalysis.exe` when that file is present; otherwise, the download endpoint redirects to the latest GitHub release asset.
+
+```powershell
+.venv\Scripts\python.exe -m pip install -r requirements-web.txt
+.\run_web.ps1
+```
+
+Open `http://127.0.0.1:8000/`. To publish a Windows download, push a `v*` version tag (for example, `v0.2.0`); the Windows release workflow tests the desktop application, builds the executable, and attaches `ResearchAnalysis.exe` to that GitHub release. The hosted page links to the latest release asset.
+
+## 2.3 Tests and backups
+
+Run the complete test suite with:
+
+```powershell
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Use the desktop application's existing backup workflow for research databases. Before any hosted migration, stop writes, copy the SQLite database and its dataset storage together, verify the copy opens, and retain the original. No production migration is run by this repository configuration.
+
+## 2.4 Time-series analysis
+
+The desktop application has a separate **Time-Series Analysis** window in the sidebar. It can load project datasets or open CSV, XLSX, XLS, and text-based PDF tables; paste tabular data; and edit observations in the preview grid. Use **Back** to return to the previously viewed tab, or **Return to main app** to close the workspace and resume the main application. Loading different data returns to the preview and clears results belonging to the previous dataset. The workflow retains multiple columns, detects candidate time, numeric, and categorical fields, and lets the researcher assign one outcome and external predictors or multiple endogenous variables. Categorical fields are inspected but cannot be used directly in the current statistical models.
+
+Before fitting, the window reports invalid or missing dates, duplicate timestamps, gaps, irregular intervals, missing/non-numeric values, constant fields, and apparent frequency mismatches. Proposed operations (for example, explicit duplicate handling, resampling, row exclusion, interpolation, or forward filling) require review and approval, operate on a working copy, and are saved in a preprocessing audit. The original imported observations are not silently changed. Invalid dates and incompatible variable frequencies need to be resolved by the researcher.
+
+For one outcome, the module includes ARIMA/SARIMA, ADF, KPSS, Phillips-Perron, ACF/PACF, differencing, trend and seasonal decomposition, moving averages, chronological forecast comparison, residual diagnostics, and forecast intervals. Holdout metrics include MSE, RMSE, MAE, and MAPE where defined. ARIMA orders are configured by the researcher; the comparison table is not an automatic model-selection procedure. Exponential-smoothing intervals are approximate residual-scale intervals, not model-based confidence intervals.
+
+For an outcome with explicitly selected external predictors, the module offers ARIMAX, SARIMAX, and regression-based forecasts. It checks predictor stationarity and does not automatically treat predictors as endogenous. Forecasts require date-aligned future predictor values; users may supply named scenarios or explicitly request independent predictor extrapolations. Estimated predictor paths are labeled, saved, and shown with the forecast, but the outcome prediction interval does not propagate uncertainty from the estimated predictor paths. Regression is restricted to series with level-stationarity evidence; nonstationary predictors require an explicit transformation or a separately justified cointegrating design.
+
+For multiple endogenous variables, the module provides a stationarity-screened VAR workflow, Johansen trace-rank testing, VECM where compatible I(1) evidence and a non-saturated cointegration rank are supported, joint Granger-causality tests, lag selection, stability and residual checks, multivariate forecasts, IRFs, and VAR FEVD. VAR in levels is restricted to series with level-stationarity evidence. Orthogonalized IRFs depend on variable ordering. VECM forecasts currently do not include forecast intervals or FEVD, and multivariate diagnostics are narrower than the univariate residual suite.
+
+Recommendations are based on selected roles, date regularity, sample size, missingness, variable variation, and ADF/KPSS stationarity screening. They distinguish recommended, conditional, and unsuitable methods; a displayed method name is not a guarantee of valid inference. Small samples and conflicting stationarity evidence require particular caution. Saved results retain model settings, test/evaluation output, predictor scenarios, recommendations, provenance, and preprocessing history for project reporting. The window supports CSV/XLSX/PDF/DOCX exports and saving edited data as a new project revision. New Word and Excel exports contain native Office charts with editable chart data; chart axes explicitly retain visible category/date ticks and numerical value ticks, as well as axis titles and units. PDF is a fixed-layout print copy and omits charts; use Word or Excel when you need to edit a chart. Chapter Four includes the saved time-series results and associated visualizations.
+
+Known limitations: scanned-PDF OCR is not supported; PDF import requires selectable text. Automatic ARIMA order search, automatic seasonal detection from statistical tests, structural-break/unit-root adjustments, categorical encoding, exogenous cointegration testing, multivariate heteroskedasticity diagnostics, VECM forecast intervals, and multivariate model comparison are not implemented. Independent predictor extrapolation is optional and should be treated as an assumption, not observed future data. Review diagnostics, assumptions, and limitations before using results in academic or policy conclusions.
+
 ## 3. The normal workflow
 
 For a quantitative project, use this order:
@@ -66,7 +151,71 @@ Create Project -> Create or import questionnaire -> Enter or import real respons
 -> Link variables -> Run analysis -> Review results -> Generate Chapter Four -> Export
 ```
 
-The guided workflow at the bottom of the window explains the next required step. If **Continue** is disabled, read the message below the progress bar.
+The guided workflow at the bottom of the window explains the next required step. If **Continue** is disabled, read the message below the progress bar. The steps below explain what to prepare, what to do in the app, and what to check before you rely on an analysis.
+
+## First real study: follow this sequence
+
+This is the recommended end-to-end path for a first quantitative study. It applies whether you are entering paper forms or importing an existing file. Complete the planning steps before running statistical tests; the app can calculate a statistic, but it cannot decide whether your question, measures, sample, or study design make that statistic meaningful.
+
+### Before you open the app
+
+1. **Confirm that you are allowed to use the data.** Follow your ethics approval, consent terms, institution rules, and applicable privacy requirements. Remove direct identifiers unless they are necessary and protected for your workflow. Do not put names, phone numbers, addresses, or other identifying details in variable names or analysis notes.
+2. **Keep a safe source copy.** Save an unchanged copy of the original spreadsheet or scanned forms in an access-controlled location. The app's revisions are useful working history, but they are not a substitute for your approved source records and institutional backups.
+3. **Write down the study question.** Make it specific enough to identify the population, outcome, and any group or predictor being studied. Example: “Among [defined participants], is [measured study-hours variable] associated with [measured outcome]?” Replace bracketed text with your actual study definitions.
+4. **Check the approved protocol.** Confirm the planned sample, inclusion and exclusion rules, questionnaire version, outcome definitions, and analysis plan. Do not change these after seeing results just to obtain a preferred finding; document any justified deviation.
+5. **Create a data dictionary.** For every column, record its meaning, permitted values, measurement level, missing-value rule, and source question. Decide how multi-select answers, reverse-worded items, composite scores, and open-ended responses are represented before importing.
+6. **Decide how missing answers are represented.** Blank cells are the clearest default. If your source uses codes such as `99`, `-`, or `N/A`, decide whether these mean missing or are valid responses and apply one consistent documented rule. A number such as `999` is not automatically recognized as missing.
+7. **For a time series, confirm the observation schedule.** Determine whether each row is a day, month, quarter, year, or another interval; whether dates mark the start or end of a period; how duplicate periods are resolved; and whether future predictor values are actually known.
+
+### Create one project for one study
+
+1. Start the application and open **Projects**.
+2. Select **New Project**. Use a recognizable study name, not a participant name or confidential title. If you have multiple studies, create a separate project for each.
+3. Enter the study title and researcher details that belong in reports. Check spelling because these details may be repeated in generated documents.
+4. Set **Significance Level** and **Multiple-testing correction** to match your approved analysis plan. The default significance level is `0.05`; **Holm** is the default correction for multiple tests. Do not change these choices after seeing results to make a result appear significant. Ask your supervisor or statistician if you do not know which correction your study requires.
+5. Create and open the project. Confirm that its name is visible before you import data or enter responses.
+
+### Add and check the dataset
+
+Use [Type paper questionnaires](#a-type-paper-questionnaires) if the responses exist only on paper. Use [Import a spreadsheet](#b-import-a-spreadsheet) if you already have a CSV or Excel workbook. Use [Build from a blank document](#c-build-from-a-blank-document) if you need to create a schema from the instrument.
+
+After entry or import:
+
+1. Open **Data** and confirm the displayed project and dataset are the ones you intend to work on.
+2. Review **Data View** for a few records against the source forms or source spreadsheet. Check the first, middle, and last rows, and check any rows that produced warnings.
+3. Open **Variable View**. Confirm each variable's label, type, measurement level, allowed values, valid count, and missing count. Numeric storage does not automatically mean a variable is continuous; a numeric code for “Strongly agree” is still an ordered response category.
+4. Check IDs for uniqueness and make sure IDs do not contain identifying information unless the approved protocol requires it.
+5. Record how many records were received, how many were excluded under the protocol, and why. Make sure these counts match the source records.
+6. If you correct or recode anything, use **Data Cleaning**, inspect the proposed change, and save it as a new revision. Keep the original revision available and record the reason for each change.
+
+### Define questions and analysis before looking for a result
+
+1. Open **Research Questions** and add each question you actually intend to answer. Keep questions distinct: a question about describing a sample is different from a question about comparing groups or predicting an outcome.
+2. For an inferential question, add the null hypothesis (H0) and alternative hypothesis (H1) that match your protocol. Use a descriptive question without a hypothesis when you are only summarizing what is present.
+3. Open the variable-linking workflow and connect each question or hypothesis to the correct dataset variables. Check which variable is the outcome, which are predictors or grouping variables, and which rows are eligible under your study rules.
+4. Select an analysis that matches the design and measurement level. The application's recommendation is a starting point, not a substitute for your protocol, supervisor, or statistician.
+5. Before running, check whether the sample is independent or paired, how many groups there are, what values the variables contain, and whether the analysis assumptions are plausible. Do not choose a test only because it produces a small p-value.
+
+### Run, review, and save an analysis
+
+1. Open **Analysis**, select the intended question or hypothesis, then select the analysis and variables. Confirm that the active dataset revision is the one you checked.
+2. Select **Run Selected Analysis**. If the app reports a warning or refuses to run, read the full message and resolve the underlying issue; do not work around it by silently deleting rows.
+3. Review the sample size used, exclusions or missingness, descriptive summaries, estimates, uncertainty intervals, p-values, assumptions, and diagnostic warnings. A result with fewer observations than expected needs an explanation.
+4. Check the direction and size of an estimate, not only whether its p-value crosses a threshold. Ask whether the estimate is meaningful in the real-world units and context of your study.
+5. Save the result to the project. Add a clear label or note that identifies the question and data revision. Results are tied to the data used when they were run; changing data means you should rerun affected analyses.
+6. If the result is unexpected, verify the source data, coding, missing-value rules, variable mapping, and analysis choice before interpreting it. Do not repeatedly try different tests until one supports the desired conclusion.
+
+### Prepare a report and preserve the work
+
+1. Open **Chapter Four** and generate the preview after the analyses you intend to report have been saved.
+2. Check the project title, sample counts, dataset revision, research questions, analysis results, warnings, and quotations against your records.
+3. Explain exclusions, missing data, deviations from the plan, and unresolved limitations in your own methods and results text. Generated wording does not know your study context.
+4. Export to Word or Excel, open the exported file, and check every table, label, number, chart, and page break. Treat the export as a draft for review, not a submission-ready thesis.
+5. Back up the application data folder and your original source data. Verify that the backup exists and can be restored according to your institution's policy.
+
+### Keep a short decision log
+
+For reproducibility, keep a separate note with the date, dataset revision, variable definitions, missing-value rules, exclusions, transformations, analysis choices, deviations from the plan, and who reviewed the results. The app stores useful project and analysis history, but a short human-readable decision log helps another researcher understand why you made each choice.
 
 Use **Back** to return, **Continue** to move forward, and **Save and exit** to stop and resume later.
 
@@ -215,6 +364,7 @@ The application does not silently delete outliers, unusual respondents, or incom
 5. Open the exported file before submitting it.
 
 Reports use saved analysis results and identify historical dataset revisions. If data changes, rerun the analysis and generate a new report.
+The Word document and workbook include a **How to read this report** guide. Questionnaire labels are paired with their source column names; qualitative results separate themes, codes, definitions, and quotations; time-series reporting explains the ADF/PP and KPSS null hypotheses and forecast metrics. Mixed-methods results are kept distinct unless the researcher has documented how a theme relates to a research question. Review warnings, source notes, and unavailable statistics before publication.
 
 ## 8. Common problems
 

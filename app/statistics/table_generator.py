@@ -67,7 +67,7 @@ class TableGenerator:
         self.decimal_places = decimal_places
         self.p_value_threshold = float(p_value_threshold)
 
-    def from_saved_run(self, run, numbering=None):
+    def from_saved_run(self, run, numbering=None, *, variable_labels=None, value_labels=None):
         result = run.get("result")
         if not isinstance(result, dict):
             raise ValueError("saved run must contain a decoded result dictionary.")
@@ -89,6 +89,8 @@ class TableGenerator:
             settings=run.get("settings") or {},
             numbering=numbering,
             source_key=run.get("id"),
+            variable_labels=variable_labels,
+            value_labels=value_labels,
         )
 
     def from_result(
@@ -100,6 +102,8 @@ class TableGenerator:
         settings=None,
         numbering=None,
         source_key=None,
+        variable_labels=None,
+        value_labels=None,
     ):
         if hasattr(result, "to_dict"):
             result = result.to_dict()
@@ -123,7 +127,7 @@ class TableGenerator:
             message = error.get("message", "This analysis did not produce a valid result.")
             footnotes.append(message)
             rows = [[
-                self._format_variables(result.get("variables")),
+                self._format_variables(result.get("variables"), variable_labels),
                 self._format_value(result.get("sample_size")),
                 self._format_value(error.get("code")),
                 message,
@@ -134,7 +138,7 @@ class TableGenerator:
             title = self.TEST_TITLES[test_name]
             summary = details.get("report", {}).get("numeric_summary") or []
             rows = [[
-                self._format_value(record.get("Variable")),
+                self._format_labeled_value(record.get("Variable"), None, variable_labels),
                 self._format_value(record.get("N")),
                 self._format_value(record.get("Missing")),
                 self._format_number(record.get("Mean")),
@@ -154,12 +158,12 @@ class TableGenerator:
             means = details.get("group_means") or []
             sds = details.get("group_standard_deviations") or []
             rows = [[
-                self._format_variables(result.get("variables")),
-                self._format_value(groups[0] if len(groups) > 0 else None),
+                self._format_variables(result.get("variables"), variable_labels),
+                self._format_labeled_value(groups[0] if len(groups) > 0 else None, result.get("variables", [None, None])[1] if len(result.get("variables") or []) > 1 else None, value_labels),
                 self._format_value(sizes[0] if len(sizes) > 0 else None),
                 self._format_value(means[0] if len(means) > 0 else None),
                 self._format_value(sds[0] if len(sds) > 0 else None),
-                self._format_value(groups[1] if len(groups) > 1 else None),
+                self._format_labeled_value(groups[1] if len(groups) > 1 else None, result.get("variables", [None, None])[1] if len(result.get("variables") or []) > 1 else None, value_labels),
                 self._format_value(sizes[1] if len(sizes) > 1 else None),
                 self._format_value(means[1] if len(means) > 1 else None),
                 self._format_value(sds[1] if len(sds) > 1 else None),
@@ -180,7 +184,7 @@ class TableGenerator:
         elif test_name == "paired_t_test":
             title = self.TEST_TITLES[test_name]
             rows = [[
-                self._format_variables(result.get("variables")),
+                self._format_variables(result.get("variables"), variable_labels),
                 self._format_value(result.get("sample_size")),
                 self._format_number(details.get("mean_difference")),
                 self._format_number(details.get("standard_deviation_of_differences")),
@@ -255,8 +259,8 @@ class TableGenerator:
                     obs = self._matrix_value(observed, row_index, column_index)
                     exp = self._matrix_value(expected, row_index, column_index)
                     rows.append([
-                        self._format_value(category),
-                        self._format_value(column_category),
+                        self._format_labeled_value(category, (result.get("variables") or [None])[0], value_labels),
+                        self._format_labeled_value(column_category, (result.get("variables") or [None, None])[1], value_labels),
                         self._format_value(obs),
                         self._format_number(exp),
                     ])
@@ -273,8 +277,8 @@ class TableGenerator:
             title = self.TEST_TITLES[test_name]
             variables = result.get("variables") or []
             rows = [[
-                self._format_value(variables[0] if len(variables) > 0 else None),
-                self._format_value(variables[1] if len(variables) > 1 else None),
+                self._format_labeled_value(variables[0] if len(variables) > 0 else None, None, variable_labels),
+                self._format_labeled_value(variables[1] if len(variables) > 1 else None, None, variable_labels),
                 self._format_value(result.get("sample_size")),
                 self._format_number(result.get("statistic")),
                 self._format_p_value(result.get("p_value")),
@@ -308,7 +312,7 @@ class TableGenerator:
                 ),
             ]
             rows = [[
-                term,
+                    self._format_labeled_value(term, None, variable_labels),
                 self._format_number(coefficient),
                 self._format_number(standard_error),
                 self._format_number(test_statistic),
@@ -328,7 +332,7 @@ class TableGenerator:
         else:
             title = self.TEST_TITLES.get(test_name, str(test_name))
             rows = [[
-                self._format_variables(result.get("variables")),
+                self._format_variables(result.get("variables"), variable_labels),
                 self._format_value(result.get("sample_size")),
                 self._format_number(result.get("statistic")),
                 self._format_p_value(result.get("p_value")),
@@ -370,13 +374,14 @@ class TableGenerator:
         source=None,
         numbering=None,
         source_key=None,
+        variable_labels=None,
     ):
         records = self._records(summary)
         columns = ["Variable", "N", "Mean", "SD", "Minimum", "Maximum"]
         rows = []
         for record in records:
             rows.append([
-                self._format_value(record.get("Variable", record.get("variable"))),
+                self._format_labeled_value(record.get("Variable", record.get("variable")), None, variable_labels),
                 self._format_value(record.get("N", record.get("Valid"))),
                 self._format_number(record.get("Mean", record.get("mean"))),
                 self._format_number(record.get("Std. Deviation", record.get("std"))),
@@ -402,15 +407,17 @@ class TableGenerator:
         source=None,
         numbering=None,
         source_key=None,
+        value_labels=None,
+        variable_labels=None,
     ):
         records = self._records(frequency_table)
         rows = [[
-            self._format_value(record.get("Value", record.get("value"))),
+            self._format_labeled_value(record.get("Value", record.get("value")), variable, value_labels),
             self._format_value(record.get("Frequency", record.get("frequency"))),
             self._format_percentage(record.get("Percent", record.get("percent"))),
         ] for record in records]
         return self._make_table(
-            title or f"Demographic distribution: {variable}",
+            title or f"Demographic distribution: {self._format_labeled_value(variable, None, variable_labels)}",
             ["Category", "Frequency", "Percentage"],
             rows,
             {"type": "frequency_table", "variable": variable, **(source or {})},
@@ -425,6 +432,8 @@ class TableGenerator:
         *,
         report_id,
         numbering=None,
+        variable_labels=None,
+        value_labels=None,
     ):
         if not isinstance(report, dict):
             raise TypeError("report must be a descriptive-report dictionary.")
@@ -441,6 +450,7 @@ class TableGenerator:
                 },
                 numbering=numbering,
                 source_key=f"{report_id}:numeric_summary",
+                variable_labels=variable_labels,
             ))
 
         frequency_tables = report.get("frequency_tables") or {}
@@ -457,6 +467,8 @@ class TableGenerator:
                 },
                 numbering=numbering,
                 source_key=f"{report_id}:frequency:{variable}",
+                value_labels=value_labels,
+                variable_labels=variable_labels,
             ))
         return tables
 
@@ -534,8 +546,27 @@ class TableGenerator:
         return str(value)
 
     @staticmethod
-    def _format_variables(variables):
-        return ", ".join(str(value) for value in variables) if variables else "Not available"
+    def _format_variables(variables, variable_labels=None):
+        return ", ".join(
+            str((variable_labels or {}).get(value, value))
+            for value in variables
+        ) if variables else "Not available"
+
+    def _format_labeled_value(self, value, variable=None, labels=None):
+        if variable is None and isinstance(labels, dict) and value in labels:
+            return str(labels[value])
+        if isinstance(labels, dict) and variable in labels:
+            mapped = labels[variable]
+            if isinstance(mapped, dict):
+                try:
+                    if value in mapped:
+                        return str(mapped[value])
+                    numeric_value = float(value)
+                    if numeric_value.is_integer() and int(numeric_value) in mapped:
+                        return str(mapped[int(numeric_value)])
+                except (TypeError, ValueError):
+                    pass
+        return self._format_value(value)
 
     @staticmethod
     def _matrix_value(matrix, row, column):

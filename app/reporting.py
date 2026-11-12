@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -19,6 +20,8 @@ from app.statistics.table_generator import (
     TableGenerator,
     TableNumberingContext,
 )
+from app.statistics.time_series_analysis import stationarity_p_value_display
+from app.word_charts import add_editable_chart, time_series_chart_specs
 
 
 @dataclass
@@ -27,6 +30,7 @@ class ReportSection:
     paragraphs: list[str] = field(default_factory=list)
     tables: list[GeneratedTable] = field(default_factory=list)
     source_question_id: int | None = None
+    charts: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -60,7 +64,7 @@ class ChapterFourReport:
 class ChapterFourGenerator:
     def __init__(self, database, table_generator=None, interpretation_engine=None):
         self.database = database
-        self.table_generator = table_generator or TableGenerator()
+        self.table_generator = table_generator or TableGenerator(decimal_places=3)
         self.interpretation_engine = interpretation_engine or InterpretationEngine()
 
     def generate(self, project_id):
@@ -93,6 +97,16 @@ class ChapterFourGenerator:
                 f"The configured significance level is {self._format_alpha(project['significance_level'])}.",
             ],
         )]
+        sections.append(ReportSection(
+            title="How to read this report",
+            paragraphs=[
+                "Quantitative findings use the sample size (N), estimates, test statistics, p-values, and confidence intervals shown in each table. Compare p-values with the configured significance level; a non-significant result is not proof that there is no effect.",
+                "Variable labels show the questionnaire wording followed by the dataset column name in brackets. If no approved questionnaire label exists, the dataset column name is used.",
+                "Time-series findings identify the series, deterministic-term scope, test-specific null decisions, chronological holdout metrics, forecast intervals, and diagnostic warnings. ADF and Phillips-Perron test a unit-root null; KPSS tests a stationarity null. Conflicting results should be reported as conflicting evidence.",
+                "Qualitative findings are organized as themes, codes, definitions, and saved excerpts. Excerpts are source material, not statistical evidence; the software does not infer themes or automatically connect quotations to quantitative results.",
+                "Use the section headings and source notes to trace every finding to its dataset or saved analysis. Warnings and unavailable values are intentionally retained for review.",
+            ],
+        ))
         warnings = list(dataset_warnings.values())
         numbering = TableNumberingContext(f"chapter-four:{project_id}")
 
@@ -109,6 +123,7 @@ class ChapterFourGenerator:
             if current_dataset is not None
             else None
         )
+        variable_labels, value_labels = self._questionnaire_labels(project_id)
         if current_dataframe is None:
             descriptive_section.paragraphs.append(
                 "Descriptive and demographic tables are unavailable because no project dataset could be loaded."
@@ -123,6 +138,8 @@ class ChapterFourGenerator:
                     report,
                     report_id=report_id,
                     numbering=numbering,
+                    variable_labels=variable_labels,
+                    value_labels=value_labels,
                 )
             )
             duplicate_rows = int(current_dataframe.duplicated().sum())
@@ -132,7 +149,7 @@ class ChapterFourGenerator:
             )
             revision = current_dataset["revision_number"] or 1
             descriptive_section.paragraphs.append(
-                f"Tables summarize dataset {current_dataset['id']} revision {revision}, the active immutable dataset snapshot. Frequency tables include categorical and low-cardinality variables; variable labels and substantive demographic meaning come from the source-column names."
+                f"Tables summarize dataset {current_dataset['id']} revision {revision}, the active immutable dataset snapshot. Frequency tables include categorical and low-cardinality variables. Questionnaire labels are paired with their source column names; unlabeled variables retain their dataset column names."
             )
             if duplicate_rows:
                 descriptive_section.paragraphs.append(
@@ -220,6 +237,8 @@ class ChapterFourGenerator:
                     self.table_generator.from_saved_run(
                         run,
                         numbering=numbering,
+                        variable_labels=variable_labels,
+                        value_labels=value_labels,
                     )
                 )
             sections.append(section)
@@ -231,24 +250,27 @@ class ChapterFourGenerator:
         if guide or transcripts or qualitative_summary or codings:
             qualitative_section = ReportSection(title="Qualitative interview findings")
             qualitative_section.paragraphs.append(
-                "This section presents manually stored and coded interview material. "
-                "Themes and interpretations are based only on the analyst's saved codebook and excerpts; the software does not invent themes or claim automatic meaning."
+                "This section presents manually stored interview material. Each theme groups a saved code and its definition; illustrative excerpts are quotations retained from the source record. The analyst is responsible for interpretation."
+                " The software does not invent themes or claim automatic meaning."
             )
             if guide:
                 qualitative_section.paragraphs.append(
                     f"Interview guide: {guide['title']}. The guide is stored with this project."
                 )
             qualitative_section.paragraphs.append(
-                f"Interview transcripts stored: {len(transcripts)}; coded excerpts stored: {len(codings)}."
+                f"Source material: {len(transcripts)} transcript(s) and {len(codings)} coded excerpt(s)."
             )
             for row in qualitative_summary:
                 qualitative_section.paragraphs.append(
-                    f"Theme '{row['theme']}', code '{row['code']}': {row['description'] or 'No description supplied'}. Coded excerpts: {row['coded_excerpts']}."
+                    f"Theme: {row['theme']}. Code: {row['code']}. "
+                    f"Definition: {(row['description'] or 'Not supplied').rstrip('. ')}. "
+                    f"Coded excerpts: {row['coded_excerpts']}."
                 )
                 excerpts = [coding for coding in codings if coding['code'] == row['code']]
                 for coding in excerpts[:3]:
                     qualitative_section.paragraphs.append(
-                        f"Illustrative excerpt ({coding['participant_id']}): {coding['excerpt']}"
+                        f"Illustrative quotation (participant {coding['participant_id']}): "
+                        f"{coding['excerpt']}"
                     )
             sections.append(qualitative_section)
 
@@ -270,17 +292,143 @@ class ChapterFourGenerator:
         if themes and (questions or current_dataframe is not None):
             integration = ReportSection(title="Mixed-methods integration")
             integration.paragraphs.append(
-                "Approved qualitative themes are presented alongside quantitative findings. "
-                "The relationship is descriptive and interpretive; quotations are not substitutes for numerical results."
+                "Quantitative findings and approved qualitative themes are presented in separate sections. "
+                "No analyst-authored mapping between themes and research questions is stored, so this report "
+                "does not claim that a theme explains or confirms a numerical result. Add an explicit "
+                "interpretation before making an integrated conclusion."
             )
-            for theme in themes:
-                integration.paragraphs.append(
-                    f"Theme '{theme['name']}': {theme['description'] or 'No description supplied'}"
-                )
             sections.append(integration)
 
+        time_series_analyses = self.database.get_project_time_series_analyses(project_id)
+        if time_series_analyses:
+            time_series_section = ReportSection(title="Time-series analysis and data provenance")
+            time_series_section.paragraphs.append(
+                "The following saved time-series results and source metadata were supplied by the researcher. "
+                "Stationarity test outcomes are reported with their distinct null hypotheses; failure to reject a null is not proof of that null."
+            )
+            for analysis in time_series_analyses:
+                result = analysis["result"]
+                if result.get("analysis_type") in {"exogenous", "multivariate"}:
+                    time_series_section.charts.extend(time_series_chart_specs(result))
+                    time_series_section.paragraphs.extend(
+                        [
+                            f"Analysis: {result.get('model_specification', result.get('model_name'))}.",
+                            f"Variables: {result.get('dependent_variable', result.get('endogenous_variables', result.get('variables')))}; "
+                            f"exogenous predictors: {result.get('exogenous_variables', [])}.",
+                            f"Observations: {result.get('rows')}; frequency: {result.get('frequency')}.",
+                            f"Out-of-sample evaluation: {result.get('evaluation')}.",
+                            f"Diagnostics: {result.get('diagnostics')}.",
+                            f"Preprocessing audit: {result.get('preprocessing_operations', [])}.",
+                            f"Forecast limitation: {result.get('forecast_limitation') or 'None'}.",
+                            f"Forecast interval assumption: {result.get('forecast_interval_assumption') or 'Not applicable'}.",
+                            f"Future predictor source: {result.get('future_predictor_source') or 'Not supplied'}.",
+                            f"Scenarios: {result.get('scenario_forecasts', {})}.",
+                            f"Cointegration: {result.get('cointegration')}.",
+                            f"Johansen rank and trace statistics: rank={result.get('rank')}; "
+                            f"trace={result.get('trace_statistics')}; "
+                            f"critical values={result.get('critical_values')}.",
+                            f"Integration-order screening: {result.get('integration_profiles')}.",
+                            f"Granger causality: {result.get('granger_causality')}.",
+                            f"Stability: {result.get('stability')}.",
+                            "Interpret IRFs/FEVD with their selected lag structure, deterministic terms, "
+                            "variable ordering, and model assumptions.",
+                        ]
+                    )
+                    continue
+                if "time_series_plot" in result and "trend_values" in result:
+                    time_series_section.charts.extend(time_series_chart_specs(result))
+                time_series_section.paragraphs.extend(
+                    [
+                        f"Indicator: {analysis['indicator_name'] or result['value_column']}; "
+                        f"series: {result['date_range'][0]} to {result['date_range'][1]} "
+                        f"({result['frequency']}).",
+                        f"Data source: {analysis['data_source'] or 'Not provided'}. "
+                        f"Measurement methodology: {analysis['methodology'] or 'Not provided'}.",
+                        f"Source URL: {analysis['source_url'] or 'Not provided'}. "
+                        f"Units: {analysis['units'] or 'Not provided'}. "
+                        f"Date downloaded: {analysis['downloaded_date'] or 'Not provided'}.",
+                        f"Selected model: {result['model_specification']}. "
+                        f"Deterministic-term scope: {result['stationarity_scope']} stationarity. "
+                        f"Model convergence: {result['convergence_status']}.",
+                        *(
+                            result.get("academic_interpretations")
+                            or {"summary": result.get("academic_interpretation", "")}
+                        ).values(),
+                        (
+                            "Forecast workflow: "
+                            f"{result.get('model_evaluation_design', {}).get('training_observations', 0)} "
+                            "training observations through "
+                            f"{result.get('model_evaluation_design', {}).get('training_end') or 'no training split'}; "
+                            f"{result.get('model_evaluation_design', {}).get('holdout_observations', 0)} "
+                            f"holdout observations starting {result.get('model_evaluation_design', {}).get('holdout_start') or 'not requested'}; "
+                            "final estimation uses "
+                            f"{result.get('model_evaluation_design', {}).get('final_estimation_observations', 0)} "
+                            "observations."
+                        ),
+                    ]
+                )
+                for test_name, test in result["stationarity_tests"].items():
+                    if "p_value" in test:
+                        time_series_section.paragraphs.append(
+                            f"{test_name}: statistic {test['statistic']:.3f}, "
+                            f"{stationarity_p_value_display(test)}; {test['conclusion']}"
+                        )
+                for series_name, tests in result["stationarity_assessment"].items():
+                    if series_name == "level":
+                        continue
+                    for test_name, test in tests.items():
+                        if "p_value" not in test:
+                            continue
+                        time_series_section.paragraphs.append(
+                            f"{series_name.replace('_', ' ').title()} {test_name}: "
+                            f"statistic {test['statistic']:.3f}, "
+                            f"{stationarity_p_value_display(test)}; "
+                            f"{test['conclusion']}"
+                        )
+                    time_series_section.paragraphs.append(
+                        f"{series_name.replace('_', ' ').title()} interpretation: "
+                        f"{result['stationarity_interpretations'][series_name]}"
+                    )
+                if result["model_comparison"]:
+                    time_series_section.paragraphs.append(
+                        "Chronological forecast comparison on the same held-out observations "
+                        "(MSE / RMSE / MAE / MAPE; lower is better): "
+                        + "; ".join(
+                            f"{name}: {metrics['MSE']:.3f} / {metrics['RMSE']:.3f} / "
+                            f"{metrics['MAE']:.3f} / "
+                            f"{metrics['MAPE']:.3f}"
+                            if metrics["MAPE"] is not None
+                            else f"{name}: {metrics['MSE']:.3f} / {metrics['RMSE']:.3f} / "
+                            f"{metrics['MAE']:.3f} / unavailable"
+                            for name, metrics in result["model_comparison"].items()
+                        )
+                        + "."
+                    )
+                if result["forecast"]:
+                    time_series_section.paragraphs.append(
+                        "Forecasts (period, value, lower bound, upper bound): "
+                        + "; ".join(
+                            f"{item['period']}, {item['value']:.3f}, "
+                            f"{item['lower']:.3f}, {item['upper']:.3f}"
+                            for item in result["forecast"]
+                        )
+                        + f". Interval method: {result['prediction_interval']['method']}. "
+                        f"{result['prediction_interval']['assumptions']}"
+                    )
+                for warning in result["diagnostic_warnings"]:
+                    time_series_section.paragraphs.append(
+                        f"Residual diagnostic warning: {warning}"
+                    )
+                for warning in result["warnings"]:
+                    time_series_section.paragraphs.append(
+                        f"Time-series limitation: {warning}"
+                    )
+            sections.append(time_series_section)
+
         summary_paragraphs = [
-            f"The chapter includes {len(questions)} research question(s) and {len(source_analysis_ids)} saved analysis run(s).",
+            f"The chapter includes {len(questions)} research question(s), "
+            f"{len(source_analysis_ids)} saved inferential analysis run(s), and "
+            f"{len(time_series_analyses)} saved time-series analysis run(s).",
             "Statistical findings and interpretations are reproduced from saved analysis results. No historical analysis was recalculated or modified.",
         ]
         if warnings:
@@ -299,6 +447,31 @@ class ChapterFourGenerator:
             qualitative_response_ids=[response["id"] for response in open_ended],
             warnings=list(dict.fromkeys(warnings)),
         )
+
+    def _questionnaire_labels(self, project_id):
+        """Return readable item labels with their source column names."""
+        variable_labels = {}
+        value_labels = {}
+        schemas = self.database.get_project_questionnaire_schemas(project_id)
+        schema = next((item for item in schemas if item["status"] == "approved"), None)
+        schema = schema or (schemas[0] if schemas else None)
+        if schema is None:
+            return variable_labels, value_labels
+        for question in self.database.get_questionnaire_questions(schema["id"]):
+            variable = str(question["variable_name"])
+            prompt = str(question["prompt"] or "").strip()
+            variable_labels[variable] = (
+                f"{prompt} [{variable}]" if prompt else variable
+            )
+            try:
+                options = json.loads(question["options_json"] or "[]")
+            except (TypeError, json.JSONDecodeError):
+                options = []
+            if options:
+                value_labels[variable] = {
+                    index: str(label) for index, label in enumerate(options, start=1)
+                }
+        return variable_labels, value_labels
 
     @staticmethod
     def _read_dataset(file_path):
@@ -395,6 +568,23 @@ class ChapterFourExporter:
                     for run in note.runs:
                         run.italic = True
                         run.font.size = Pt(8)
+            for index, chart in enumerate(section.charts, start=1):
+                document.add_heading(chart["title"], level=2)
+                add_editable_chart(
+                    document,
+                    document.add_paragraph(),
+                    chart["title"],
+                    chart["categories"],
+                    chart["series"],
+                    chart_type=chart.get("chart_type", "line"),
+                    x_axis_title=chart["x_axis_title"],
+                    y_axis_title=chart["y_axis_title"],
+                    width=6.4,
+                )
+                caption = document.add_paragraph(
+                    f"Figure {index}. Editable Microsoft Office chart; use Chart Design > Edit Data to modify its embedded workbook."
+                )
+                caption.style = "Caption"
 
         if report.warnings:
             document.add_heading("Data and interpretation warnings", level=1)
@@ -421,11 +611,13 @@ class ChapterFourExporter:
             "Summary of findings": "Summary",
         }
         question_sheet_names = {}
-        for index, section in enumerate(report.sections, start=1):
+        question_number = 0
+        for section in report.sections:
             if section.source_question_id is not None:
+                question_number += 1
                 question_sheet_names[section.source_question_id] = self._unique_sheet_name(
                     workbook,
-                    f"RQ{index - 2}",
+                    f"RQ{question_number}",
                 )
 
         for section in report.sections:
@@ -470,9 +662,9 @@ class ChapterFourExporter:
         source = table.source
         if source.get("type") == "analysis_run":
             return (
-                f"Source run {source.get('run_id')}; project {source.get('project_id')}; "
-                f"question {source.get('question_id')}; hypothesis {source.get('hypothesis_id')}; "
-                f"dataset {source.get('dataset_id')}; signature {source.get('dataset_signature')}"
+                f"Source: saved analysis run {source.get('run_id')}; "
+                f"project {source.get('project_id')}; research question {source.get('question_id')}; "
+                f"hypothesis {source.get('hypothesis_id')}; dataset {source.get('dataset_id')}."
             )
         return "; ".join(f"{key}: {value}" for key, value in source.items())
 
