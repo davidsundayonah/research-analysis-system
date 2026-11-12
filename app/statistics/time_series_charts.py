@@ -106,6 +106,39 @@ def create_time_series_charts(dataframe: pd.DataFrame, result: dict) -> dict:
             figure.suptitle(f"{variable}: {decomposition['model'].title()} Seasonal Decomposition (period {decomposition['period']})")
             figures["Seasonal decomposition"] = _finish(figure, list(axes), list(axes))
 
+        # Keep the two rolling measures in separate panels: the rolling mean
+        # describes the local level, while the rolling standard deviation
+        # describes local variability on a different scale.
+        rolling_mean = np.asarray(plot["rolling_mean"], dtype=float)
+        rolling_std = np.asarray(plot["rolling_standard_deviation"], dtype=float)
+        figure, axes = plt.subplots(
+            2, 1, figsize=(10, 7.2), dpi=120, sharex=True
+        )
+        axes[0].plot(
+            dates,
+            rolling_mean,
+            color=colors["teal"],
+            linewidth=1.9,
+            label=f"Rolling mean ({result['rolling_window']} periods)",
+        )
+        axes[0].set_title("Rolling mean", loc="left")
+        axes[0].set_ylabel(value_label)
+        axes[0].legend(loc="best", frameon=False)
+        axes[1].plot(
+            dates,
+            rolling_std,
+            color=colors["orange"],
+            linewidth=1.9,
+            label=f"Rolling standard deviation ({result['rolling_window']} periods)",
+        )
+        axes[1].set_title("Rolling standard deviation", loc="left")
+        axes[1].set_xlabel("Year")
+        axes[1].set_ylabel(f"Standard deviation ({unit})")
+        axes[1].legend(loc="best", frameon=False)
+        figures["Rolling statistics"] = _finish(
+            figure, list(axes), [*axes]
+        )
+
         figure, axis = plt.subplots(figsize=(10, 5.6), dpi=120)
         axis.plot(dates, plot["first_difference"], color=colors["blue"], linewidth=1.7, label="First difference")
         if plot.get("second_difference"):

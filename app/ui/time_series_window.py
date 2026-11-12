@@ -1453,7 +1453,8 @@ class TimeSeriesWindow(QDialog):
         for name, figure in figures.items():
             canvas = FigureCanvasQTAgg(figure)
             self.chart_canvases[name] = canvas
-            self.tabs.addTab(canvas, name)
+            tab_name = "Model comparison chart" if name == "Model comparison" else name
+            self.tabs.addTab(canvas, tab_name)
         self.chart_canvas = self.last_figure
 
     @staticmethod
@@ -1495,10 +1496,16 @@ class TimeSeriesWindow(QDialog):
                     critical_values = ", ".join(
                         f"{key}={value:.3f}" for key, value in test["critical_values"].items()
                     )
+                    adf_details = (
+                        f" Lag selection={test['autolag']}; lags used={test['used_lags']}; "
+                        f"effective observations={test['observations']}."
+                        if name == "ADF" and "used_lags" in test
+                        else ""
+                    )
                     lines.append(
                         f"    {name}: statistic={test['statistic']:.3f}, "
                         f"{stationarity_p_value_display(test)}; {test['conclusion']} "
-                        f"Critical values: {critical_values}."
+                        f"Critical values: {critical_values}.{adf_details}"
                     )
             lines.append(
                 f"    Combined interpretation: {result['stationarity_interpretations'][level]}"
@@ -1627,7 +1634,8 @@ class TimeSeriesWindow(QDialog):
         for name, figure in figures.items():
             canvas = FigureCanvasQTAgg(figure)
             self.chart_canvases[name] = canvas
-            self.tabs.addTab(canvas, name)
+            tab_name = "Model comparison chart" if name == "Model comparison" else name
+            self.tabs.addTab(canvas, tab_name)
         self.chart_canvas = self.chart_canvases["Original series and trend"]
 
     def _show_forecast(self, result):
@@ -1792,6 +1800,9 @@ class TimeSeriesWindow(QDialog):
                     "Statistic": item["statistic"],
                     "P-value": item["p_value"],
                     "P-value display": stationarity_p_value_display(item),
+                    "Lag selection": item.get("autolag"),
+                    "Lags used": item.get("used_lags"),
+                    "Effective observations": item.get("observations"),
                     "Null": item["null"],
                     "Alternative": item["alternative"],
                     "Critical values": str(item["critical_values"]),
@@ -1826,6 +1837,9 @@ class TimeSeriesWindow(QDialog):
                     "P-value display": stationarity_p_value_display(test)
                     if "p_value" in test
                     else "Unavailable",
+                    "Lag selection": test.get("autolag"),
+                    "Lags used": test.get("used_lags"),
+                    "Effective observations": test.get("observations"),
                     "Conclusion": test.get("conclusion", test.get("error", "")),
                 }
                 for level, tests in result["stationarity_assessment"].items()
@@ -1865,6 +1879,9 @@ class TimeSeriesWindow(QDialog):
         result = self.last_result
         rows = "".join(
             f"<tr><td>{escape(name)}</td><td>{item['statistic']:.3f}</td>"
+            f"<td>{escape(str(item.get('autolag') or '—'))}</td>"
+            f"<td>{escape(str(item.get('used_lags') if item.get('used_lags') is not None else '—'))}</td>"
+            f"<td>{escape(str(item.get('observations') if item.get('observations') is not None else '—'))}</td>"
             f"<td>{stationarity_p_value_display(item)}</td>"
             f"<td>{escape(item['conclusion'])}</td></tr>"
             for name, item in result.get("stationarity_tests", {}).items()
@@ -1879,7 +1896,9 @@ class TimeSeriesWindow(QDialog):
                 f"<pre>{escape(self._format_result(result))}</pre>"
                 "<h2>Unit-root and stationarity tests</h2>"
                 "<table border='1' cellspacing='0' cellpadding='4'><tr><th>Test</th>"
-                f"<th>Statistic</th><th>p-value</th><th>Conclusion</th></tr>{rows}</table>"
+                f"<th>Statistic</th><th>Lag selection</th><th>Lags used</th>"
+                f"<th>Effective observations</th><th>p-value</th>"
+                f"<th>Conclusion</th></tr>{rows}</table>"
                 "<p>Charts are omitted from this fixed-layout PDF. Export to Word or Excel to edit chart data.</p>"
             )
         document = QTextDocument()

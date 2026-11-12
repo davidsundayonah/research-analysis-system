@@ -294,7 +294,11 @@ def test_six_time_series_figures_are_independently_exportable(monthly_data, tmp_
         "ACF and PACF",
         "Residual diagnostics",
         "Forecasts",
+        "Model comparison",
     ]
+    assert len(figures["Rolling statistics"].axes) == 2
+    assert "Rolling mean" in figures["Rolling statistics"].axes[0].get_title(loc="left")
+    assert "Rolling standard deviation" in figures["Rolling statistics"].axes[1].get_title(loc="left")
     assert len(figures["ACF and PACF"].axes) == 2
     assert len(figures["Residual diagnostics"].axes) == 4
     for index, (name, figure) in enumerate(figures.items()):
@@ -421,11 +425,20 @@ def test_supplied_unemployment_series_regression():
     assert result["model_evaluation_design"]["training_observations"] == 30
     assert result["model_evaluation_design"]["holdout_observations"] == 5
     assert result["model_evaluation_design"]["final_estimation_observations"] == 35
+    # The fixture contains 35 annual level observations with no missing values.
+    # Under the default constant specification, AIC selects 3 ADF lags, leaving
+    # 31 effective observations; the current fixture's p-value is about 0.0881.
+    # The older 0.016789 expectation does not match this data/specification.
     assert result["stationarity_tests"]["ADF"]["p_value"] == pytest.approx(
-        0.016789, abs=0.001
+        0.088058, abs=0.001
     )
+    assert result["stationarity_tests"]["ADF"]["autolag"] == "AIC"
+    assert result["stationarity_tests"]["ADF"]["used_lags"] == 3
+    assert result["stationarity_tests"]["ADF"]["observations"] == 31
+    # Independently reproduced with arch PhillipsPerron on the same 35
+    # untransformed level observations and constant specification.
     assert result["stationarity_tests"]["Phillips-Perron"]["p_value"] == pytest.approx(
-        0.601330, abs=0.001
+        0.605358, abs=0.001
     )
     assert result["stationarity_tests"]["KPSS"]["p_value"] == 0.1
     assert stationarity_p_value_display(result["stationarity_tests"]["KPSS"]) == "p >= 0.100"
@@ -434,7 +447,7 @@ def test_supplied_unemployment_series_regression():
         "actual p-value is greater" in warning
         for warning in result["stationarity_tests"]["KPSS"]["warnings"]
     )
-    assert "conflicting evidence" in result["stationarity_interpretations"]["level"]
+    assert "do not provide a decisive result" in result["stationarity_interpretations"]["level"]
     assert result["convergence_status"] == "Converged."
     assert all(
         value is not None

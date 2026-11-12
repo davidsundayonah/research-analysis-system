@@ -108,7 +108,23 @@ def test_time_series_navigation_opens_independent_window_and_runs_analysis(
     assert main_window.time_series_window.holdout_table.rowCount() == 5
     assert main_window.time_series_window.model_comparison_table.rowCount() >= 6
     assert main_window.time_series_window.last_figure is not None
-    assert len(main_window.time_series_window.last_figures) == 7
+    expected_charts = {
+        "Original series and trend",
+        "Seasonal decomposition",
+        "Rolling statistics",
+        "Differences",
+        "ACF and PACF",
+        "Residual diagnostics",
+        "Forecasts",
+    }
+    assert expected_charts.issubset(main_window.time_series_window.chart_canvases)
+    assert "Model comparison" in main_window.time_series_window.chart_canvases
+    assert len(main_window.time_series_window.last_figures) == 8
+    assert main_window.time_series_window.tabs.tabText(
+        main_window.time_series_window.tabs.indexOf(
+            main_window.time_series_window.chart_canvases["Model comparison"]
+        )
+    ) == "Model comparison chart"
     saved_results = database.get_project_time_series_analyses(
         main_window.time_series_window.project_combo.currentData()
     )
@@ -120,7 +136,7 @@ def test_time_series_navigation_opens_independent_window_and_runs_analysis(
         tmp_path / name
         for name in (
             "working.csv",
-            "chart.png",
+            "charts.xlsx",
             "results.xlsx",
             "report.pdf",
             "report.docx",
@@ -143,6 +159,19 @@ def test_time_series_navigation_opens_independent_window_and_runs_analysis(
     assert workbook["Holdout comparison"].max_row == 6
     assert "Data provenance" in workbook.sheetnames
     assert workbook["Forecast"]["B2"].number_format == "0.000"
+    stationarity_sheet = workbook["Stationarity tests"]
+    stationarity_rows = list(stationarity_sheet.iter_rows(values_only=True))
+    stationarity_columns = {
+        name: index for index, name in enumerate(stationarity_rows[0])
+    }
+    adf_row = next(row for row in stationarity_rows[1:] if row[0] == "ADF")
+    assert adf_row[stationarity_columns["Lag selection"]] == "AIC"
+    assert adf_row[stationarity_columns["Lags used"]] == window.last_result[
+        "stationarity_tests"
+    ]["ADF"]["used_lags"]
+    assert adf_row[stationarity_columns["Effective observations"]] == window.last_result[
+        "stationarity_tests"
+    ]["ADF"]["observations"]
     workbook.close()
     with ZipFile(tmp_path / "report.docx") as archive:
         names = archive.namelist()
@@ -154,7 +183,9 @@ def test_time_series_navigation_opens_independent_window_and_runs_analysis(
         ]
         assert len(chart_parts) == len(time_series_chart_specs(window.last_result))
         assert len(workbook_parts) == len(chart_parts)
-        assert len([name for name in names if name.startswith("word/media/")]) == 1
+        # Word charts are native editable OOXML charts with embedded workbooks,
+        # not raster images in word/media.
+        assert len([name for name in names if name.startswith("word/media/")]) == 0
         chart_namespace = {"c": "http://schemas.openxmlformats.org/drawingml/2006/chart"}
         relationship_namespace = {
             "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
@@ -194,12 +225,18 @@ def test_time_series_navigation_opens_independent_window_and_runs_analysis(
         assert embedded_workbook.active["A1"].value == "Period"
         assert embedded_workbook.active["B1"].value
         embedded_workbook.close()
-    Document(tmp_path / "report.docx")
+    word_report = Document(tmp_path / "report.docx")
+    word_text = "\n".join(paragraph.text for paragraph in word_report.paragraphs)
+    assert "Lag selection=AIC" in word_text
+    assert "effective observations=" in word_text
     pdf = PdfReader(tmp_path / "report.pdf")
-    assert sum(len(page.images) for page in pdf.pages) >= 6
+    # The fixed-layout PDF intentionally omits charts; the editable charts are
+    # available in Word and Excel exports.
+    assert len(pdf.pages) >= 1
+    assert (tmp_path / "report.pdf").stat().st_size > 0
     assert all(
         (tmp_path / name).is_file()
-        for name in ("working.csv", "chart.png", "results.xlsx", "report.pdf", "report.docx")
+        for name in ("working.csv", "charts.xlsx", "results.xlsx", "report.pdf", "report.docx")
     )
 
     main_window.close()

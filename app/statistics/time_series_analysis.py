@@ -512,6 +512,16 @@ def _stationarity_tests(
                 "alternative": "The series is stationary under the specified deterministic terms.",
                 "scope": deterministic_specification,
             }
+            if name == "ADF":
+                # Keep the lag-selection choice and effective sample visible
+                # so ADF results can be independently reviewed and reproduced.
+                test.update(
+                    {
+                        "autolag": "AIC",
+                        "used_lags": int(result.lags),
+                        "observations": int(result.nobs),
+                    }
+                )
             test.update(
                 stationarity_test_conclusion(
                     name, test["p_value"], significance_level
