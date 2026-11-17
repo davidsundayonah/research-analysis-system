@@ -63,7 +63,7 @@ CycloneDX 8.0.1 generated `security-audit/production-sbom-v1.0.2-post-remediatio
 
 ## Final GitHub verification (2026-11-17)
 
-- Current `main` and `release-readiness/v1.0.2` point to `68ad223df4e0b30ee4961e45a2919f8c56010cc1`; main CI run `44066846342` completed successfully.
+- Main CI run `44066846342` for tested code commit `68ad223df4e0b30ee4961e45a2919f8c56010cc1` completed successfully. The report-only verification update was subsequently pushed to both `main` and `release-readiness/v1.0.2`; it did not change tested application code.
 - The immutable `v1.0.2` tag still points to the previously recorded release source commit `154f20a0a80b1439356de502288a74e936e7d34d`. It was not moved or recreated. The verification-only workflow run `44066885184` completed successfully from main while validating the existing tag and source.
 - GitHub-hosted Windows Python 3.13 ran 256 tests (563 warnings); production pip-audit reported no known vulnerabilities; PyInstaller build and packaged NumPy/SciPy/Matplotlib self-test passed.
 - Both current-user installation with `LOCALAPPDATA` absent and elevated machine-wide installation passed. The workflow verified application files, shortcuts, normal launch, database/settings initialization, representative upgrade fixture, uninstall, and data preservation. The 1.0.1 fixture was constructed from the current payload, not a historical release installer.
