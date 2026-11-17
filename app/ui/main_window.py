@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, QSettings, QTimer
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -16,6 +17,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtCore import QUrl
 
 from app.database.database import Database
 from app.reporting import ChapterFourExporter, ChapterFourGenerator
@@ -29,6 +32,8 @@ from app.ui.research_questions_page import ResearchQuestionsPage
 from app.ui.results_page import ResultsPage
 from app.ui.qualitative_page import QualitativePage
 from app.ui.time_series_window import TimeSeriesWindow
+from app.version import get_application_version
+from app.updates import latest_release, download_verified_installer
 
 
 class EvenlySpacedNavigation(QListWidget):
@@ -91,6 +96,36 @@ class MainWindow(QMainWindow):
 
         # Build interface
         self.setup_ui()
+        help_menu = self.menuBar().addMenu("Help")
+        update_action = QAction("Check for updates…", self)
+        update_action.triggered.connect(self.check_for_updates)
+        help_menu.addAction(update_action)
+
+    def check_for_updates(self):
+        """Check GitHub Releases, then offer a verified, user-confirmed installer."""
+        try:
+            release = latest_release()
+            if not release["available"]:
+                QMessageBox.information(self, "Research Analysis System", "You are using the latest stable version.")
+                return
+            notes = (release.get("notes") or "No release notes were published.").strip()
+            answer = QMessageBox.question(
+                self, "Update available",
+                f"Research Analysis System {release['version']} is available.\n\n{notes[:4000]}\n\nDownload and verify the installer now?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes,
+            )
+            if answer != QMessageBox.Yes:
+                return
+            installer = download_verified_installer(release)
+            launch = QMessageBox.question(
+                self, "Installer verified",
+                f"The installer checksum and Inno Setup format were verified. The release installer targets 64-bit Windows.\n\nSaved to:\n{installer}\n\nOpen the installer now?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes,
+            )
+            if launch == QMessageBox.Yes:
+                QDesktopServices.openUrl(QUrl.fromLocalFile(str(installer)))
+        except Exception as error:
+            QMessageBox.warning(self, "Update check failed", f"Could not safely check or download an update.\n\n{error}")
 
     # =========================================================
     # SETUP UI
@@ -212,7 +247,7 @@ class MainWindow(QMainWindow):
         # -----------------------------------------------------
 
         version = QLabel(
-            "Version 0.1.0"
+            f"Version {get_application_version()}"
         )
 
         version.setAlignment(

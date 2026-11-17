@@ -1013,7 +1013,7 @@ class Database:
                 """
                 SELECT * FROM projects
                 WHERE owner_user_id = ?
-                ORDER BY updated_at DESC
+                ORDER BY updated_at DESC, id ASC
                 """,
                 (owner_user_id,),
             ).fetchall()
@@ -1021,7 +1021,7 @@ class Database:
             """
             SELECT *
             FROM projects
-            ORDER BY updated_at DESC
+            ORDER BY updated_at DESC, id ASC
             """
         )
 

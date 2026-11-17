@@ -93,27 +93,37 @@ The application stores projects, database records, dataset snapshots, logs, and 
 
 Select **Help** at the bottom of the desktop application's left sidebar to browse this complete guide inside the app. It includes the start-up steps, paper-entry and spreadsheet workflows, qualitative analysis, time-series analysis, reporting, troubleshooting, and data-protection guidance. The guide is included in the Windows desktop build.
 
-## 2.1 Windows desktop build
+## 2.1 Windows desktop build and installer
 
-The desktop application remains the primary full-featured interface. After installing the development dependencies, build a portable Windows executable with:
+The desktop application is a native Windows app. The packaged folder contains the executable and its runtime libraries, so users do not need Python installed. Build the onedir application and Inno Setup installer from PowerShell in the repository root:
 
 ```powershell
 .venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
 .\build_windows.ps1
 ```
 
-The output is `dist\ResearchAnalysis.exe`. Test it on a clean Windows machine before distribution. Packaged applications still write user data to `%APPDATA%\ResearchAnalysis`; they do not write a database into the installation folder.
+Install Inno Setup 6 before running the build script. The script creates `dist\ResearchAnalysis\ResearchAnalysis.exe` with its `_internal` runtime folder, then creates `dist\installer\ResearchAnalysis_Setup.exe`. An all-users installation defaults to 64-bit Program Files, adds a Start Menu shortcut, offers an optional desktop shortcut, and provides a normal Windows uninstaller. If a user explicitly selects current-user installation, the default is `%LOCALAPPDATA%\Programs\Research Analysis System`. The installer resolves this from the supported `LOCALAPPDATA` environment variable first and has validated shell-folder and `USERPROFILE` fallbacks; it reports an error rather than selecting an unknown directory. Application data remains in `%APPDATA%\ResearchAnalysis` and is not removed by upgrade or uninstall.
+
+The installer is currently unsigned. Code signing is an optional future improvement that can identify the publisher and help establish file integrity; it does not guarantee that SmartScreen will show no warning.
+
+The installer can also be rebuilt after the onedir build with:
+
+```powershell
+.\installer\build_installer.ps1 -Version 1.0.2
+```
+
+The release workflow checks that the pushed version tag matches the tested source commit, runs the app tests, builds the full onedir folder, compiles the installer, and exercises both current-user and elevated machine-wide installation before retaining a verification artifact. A separate manual workflow dispatch is required before a public GitHub release is created.
 
 ## 2.2 Official download page
 
-The website is a download page only. It does not expose desktop projects, accounts, analysis, or data management in a browser. It serves `dist\ResearchAnalysis.exe` when that file is present; otherwise, the download endpoint redirects to the latest GitHub release asset.
+The website is a download page only. It does not expose desktop projects, accounts, analysis, or data management in a browser. It serves `dist\installer\ResearchAnalysis_Setup.exe` when that file is present; otherwise, the download endpoint redirects to the latest GitHub release installer.
 
 ```powershell
 .venv\Scripts\python.exe -m pip install -r requirements-web.txt
 .\run_web.ps1
 ```
 
-Open `http://127.0.0.1:8000/`. To publish a Windows download, push a `v*` version tag (for example, `v0.2.0`); the Windows release workflow tests the desktop application, builds the executable, and attaches `ResearchAnalysis.exe` to that GitHub release. The hosted page links to the latest release asset.
+Open `http://127.0.0.1:8000/`. The hosted service is separate from the desktop app: it runs `app.web` with FastAPI and does not start from the PySide6 application. A version tag (for example, `v1.0.2`) starts release verification and retains the installer artifact; a separate manual workflow dispatch is needed to publish the GitHub release. The hosted page links to the latest published stable release installer and presents an unavailable message until the release asset is public.
 
 ## 2.3 Tests and backups
 

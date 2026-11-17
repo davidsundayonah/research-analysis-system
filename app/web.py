@@ -1,29 +1,177 @@
-"""Official download page for the Windows desktop application."""
+"""Public landing page and download endpoint for the Windows desktop app."""
 
 from html import escape
+import json
+import logging
 import os
 from pathlib import Path
-import tomllib
+import threading
+import time
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse
+from app.version import get_application_version
 
+logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DOWNLOAD_FILENAME = "ResearchAnalysis.exe"
+DOWNLOAD_FILENAME = "ResearchAnalysis_Setup.exe"
 LATEST_RELEASE_DOWNLOAD = (
     "https://github.com/davidsundayonah/research-analysis-system/"
-    "releases/latest/download/ResearchAnalysis.exe"
+    "releases/latest/download/ResearchAnalysis_Setup.exe"
 )
+LATEST_RELEASE_API = (
+    "https://api.github.com/repos/davidsundayonah/"
+    "research-analysis-system/releases/latest"
+)
+_VERSION_CACHE_SECONDS = 30
+_version_cache_lock = threading.Lock()
+_version_cache: tuple[float, str | None, bool | None] | None = None
+_installer_validation_cache: dict[Path, tuple[int, int, bool]] = {}
 
 
 def _application_version() -> str:
-    project = tomllib.loads(
-        (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    return get_application_version()
+
+
+def _changelog_text() -> str:
+    """Return a bounded public changelog excerpt without exposing file paths."""
+    try:
+        content = (PROJECT_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    except OSError:
+        return "Release notes are temporarily unavailable."
+    return content[:5000]
+
+
+def _latest_release_info() -> tuple[str | None, bool | None]:
+    """Return latest version and requested asset availability; fallback offline."""
+    global _version_cache
+    now = time.monotonic()
+    with _version_cache_lock:
+        if _version_cache and now - _version_cache[0] < _VERSION_CACHE_SECONDS:
+            return _version_cache[1], _version_cache[2]
+
+        version = None
+        asset_available = None
+        try:
+            request = Request(
+                LATEST_RELEASE_API,
+                headers={"Accept": "application/vnd.github+json", "User-Agent": "ResearchAnalysis-DownloadSite"},
+            )
+            with urlopen(request, timeout=3) as response:
+                release = json.loads(response.read().decode("utf-8"))
+            tag = release.get("tag_name", "")
+            if not isinstance(tag, str) or not tag.strip():
+                raise ValueError("GitHub latest release did not include a tag name")
+            version = tag.strip().removeprefix("v")
+            assets = release.get("assets", [])
+            installer_asset = next(
+                (
+                    asset
+                    for asset in assets
+                    if isinstance(asset, dict) and asset.get("name") == DOWNLOAD_FILENAME
+                ),
+                None,
+            )
+            asset_available = _probe_release_asset(installer_asset) if installer_asset else False
+        except (
+            HTTPError,
+            URLError,
+            TimeoutError,
+            OSError,
+            TypeError,
+            AttributeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as error:
+            logger.warning("Could not read the latest GitHub release version; using project version: %s", error)
+            asset_available = False
+
+        _version_cache = (time.monotonic(), version, asset_available)
+        return version, asset_available
+
+
+def _latest_release_version() -> str | None:
+    return _latest_release_info()[0]
+
+
+def _probe_release_asset(asset: dict | None) -> bool:
+    """Confirm that the exact public installer asset is downloadable anonymously."""
+    if not isinstance(asset, dict):
+        return False
+    if asset.get("name") != DOWNLOAD_FILENAME or asset.get("state") != "uploaded":
+        return False
+    if not isinstance(asset.get("size"), int) or asset["size"] < 1024 * 1024:
+        return False
+    download_url = asset.get("browser_download_url")
+    if not isinstance(download_url, str):
+        return False
+    parsed_url = urlparse(download_url or "")
+    if (
+        parsed_url.scheme != "https"
+        or parsed_url.hostname != "github.com"
+        or not parsed_url.path.endswith("/" + DOWNLOAD_FILENAME)
+    ):
+        return False
+    try:
+        request = Request(
+            download_url,
+            method="HEAD",
+            headers={"User-Agent": "ResearchAnalysis-DownloadSite"},
+        )
+        with urlopen(request, timeout=5) as response:
+            if response.status not in (200, 206):
+                return False
+            disposition = response.headers.get("Content-Disposition", "")
+            return DOWNLOAD_FILENAME.lower() in disposition.lower()
+    except (HTTPError, URLError, TimeoutError, OSError):
+        logger.warning("The latest GitHub installer asset could not be reached anonymously")
+        return False
+
+
+def _is_valid_installer(path: Path) -> bool:
+    """Recognize an Inno Setup installer, not merely an arbitrary PE executable."""
+    try:
+        stat = path.stat()
+        if not path.is_file() or stat.st_size < 1024 * 1024:
+            return False
+        cached = _installer_validation_cache.get(path)
+        if cached and cached[:2] == (stat.st_mtime_ns, stat.st_size):
+            return cached[2]
+        marker = b"Inno Setup Setup Data"
+        with path.open("rb") as installer:
+            if installer.read(2) != b"MZ":
+                return False
+            previous = b""
+            found_marker = False
+            while chunk := installer.read(1024 * 1024):
+                if marker in previous + chunk:
+                    found_marker = True
+                    break
+                previous = chunk[-(len(marker) - 1) :]
+        _installer_validation_cache[path] = (stat.st_mtime_ns, stat.st_size, found_marker)
+        return found_marker
+    except (OSError, ValueError):
+        return False
+
+
+def _landing_page(version: str | None, download_available: bool = True) -> str:
+    download_control = (
+        '<a class="download" href="/download" aria-label="Download Research Analysis System for Windows">'
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/>'
+        '</svg>Download for Windows</a>'
+        if download_available
+        else '<span class="download download-unavailable" aria-disabled="true">Windows installer temporarily unavailable</span>'
     )
-    return str(project["project"]["version"])
-
-
-def _landing_page(version: str) -> str:
+    version_label = (
+        f"Version <strong>{escape(version)}</strong>"
+        if version
+        else "Latest release version temporarily unavailable"
+    )
+    changelog = escape(_changelog_text())
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -86,6 +234,7 @@ def _landing_page(version: str) -> str:
       transition: background .15s ease, transform .15s ease;
     }}
     .download:hover {{ background: #1d4ed8; transform: translateY(-1px); }}
+    .download-unavailable {{ background: #64748b; box-shadow: none; cursor: not-allowed; }}
     .download:focus-visible {{ outline: 3px solid #93c5fd; outline-offset: 3px; }}
     .download svg {{ width: 19px; height: 19px; }}
     .release-meta {{ margin: 13px 0 0; color: #64748b; font-size: 13px; }}
@@ -130,6 +279,9 @@ def _landing_page(version: str) -> str:
       background: #eff6ff; color: #40536f; font-size: 12px; line-height: 1.6;
     }}
     .note strong {{ color: #1e3a8a; }}
+    .changelog {{ margin-top: 18px; padding: 21px 24px; border: 1px solid #e2e8f0; border-radius: 13px; background: white; }}
+    .changelog h2 {{ margin: 0 0 12px; font-size: 16px; }}
+    .changelog pre {{ margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: #526179; font: inherit; font-size: 13px; line-height: 1.6; }}
     footer {{
       display: flex; justify-content: space-between; gap: 20px;
       padding: 21px 0 26px; border-top: 1px solid #e2e8f0;
@@ -167,14 +319,8 @@ def _landing_page(version: str) -> str:
           <p class="eyebrow">Research workflows, in one desktop app</p>
           <h1 id="product-title">Research Analysis System</h1>
           <p class="intro">Organize research projects, work with questionnaire and spreadsheet data, run statistical and qualitative analyses, and prepare clear reports—all in a Windows desktop application.</p>
-          <a class="download" href="/download" aria-label="Download Research Analysis System for Windows">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <path d="m7 10 5 5 5-5M12 15V3"/>
-            </svg>
-            Download for Windows
-          </a>
-          <p class="release-meta">Version <strong>{escape(version)}</strong> · 64-bit Windows · Portable executable</p>
+          {download_control}
+          <p class="release-meta">{version_label} · 64-bit Windows · Windows installer</p>
         </div>
         <aside class="product-card" aria-label="Application overview">
           <div class="product-icon" aria-hidden="true">
@@ -205,12 +351,16 @@ def _landing_page(version: str) -> str:
         <article class="detail-card">
           <h2>Get started</h2>
           <ol class="steps">
-            <li><span class="step-number">1</span><span>Download the Windows executable using the button above.</span></li>
-            <li><span class="step-number">2</span><span>Open the downloaded <strong>ResearchAnalysis.exe</strong> file.</span></li>
-            <li><span class="step-number">3</span><span>Follow any Windows security prompt, then create or open a project.</span></li>
+            <li><span class="step-number">1</span><span>Download the Windows installer using the button above.</span></li>
+            <li><span class="step-number">2</span><span>Open <strong>ResearchAnalysis_Setup.exe</strong> and follow the installation wizard.</span></li>
+            <li><span class="step-number">3</span><span>Launch Research Analysis System from the Start Menu or optional desktop shortcut.</span></li>
           </ol>
           <div class="note"><span aria-hidden="true">i</span><span><strong>Desktop application:</strong> analysis runs on your Windows computer. This website is only for product information and downloads; it does not provide browser-based research tools.</span></div>
         </article>
+      </section>
+      <section class="changelog" aria-labelledby="changelog-title">
+        <h2 id="changelog-title">Release notes</h2>
+        <pre>{changelog}</pre>
       </section>
     </main>
     <footer><span>Research Analysis System</span><span>Windows desktop software · Version {escape(version)}</span></footer>
@@ -224,46 +374,78 @@ def create_app(download_path: str | Path | None = None) -> FastAPI:
     configured_path = download_path or os.environ.get(
         "RESEARCH_ANALYSIS_DOWNLOAD_PATH"
     )
-    executable = (
-        Path(configured_path)
-        if configured_path
-        else PROJECT_ROOT / "dist" / DOWNLOAD_FILENAME
-    )
-    executable = executable.resolve()
-    version = _application_version()
+    try:
+        executable = (
+            Path(configured_path).expanduser()
+            if configured_path
+            else PROJECT_ROOT / "dist" / "installer" / DOWNLOAD_FILENAME
+        ).resolve()
+    except (OSError, RuntimeError, ValueError) as error:
+        logger.warning("Invalid configured installer path; release redirect will be used: %s", error)
+        executable = Path()
 
     app = FastAPI(
         title="Research Analysis System Downloads",
-        version=version,
+        version=_application_version(),
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
     )
     app.state.download_path = executable
-    app.state.release_download_url = os.environ.get(
-        "RESEARCH_ANALYSIS_RELEASE_DOWNLOAD_URL", LATEST_RELEASE_DOWNLOAD
-    )
+    configured_release_url = os.environ.get("RESEARCH_ANALYSIS_RELEASE_DOWNLOAD_URL", LATEST_RELEASE_DOWNLOAD)
+    parsed_release_url = urlparse(configured_release_url)
+    if parsed_release_url.scheme != "https" or parsed_release_url.hostname != "github.com":
+        logger.warning("Invalid release download URL; using the official GitHub release URL")
+        configured_release_url = LATEST_RELEASE_DOWNLOAD
+    app.state.release_download_url = configured_release_url
+
+    @app.middleware("http")
+    async def security_and_cache_headers(request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'",
+        )
+        if os.environ.get("RESEARCH_ANALYSIS_ENABLE_HSTS", "").lower() in {"1", "true", "yes"}:
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        return response
 
     @app.get("/", response_class=HTMLResponse)
     async def landing_page():
+        release_version, remote_asset_available = _latest_release_info()
+        local_asset_available = _is_valid_installer(executable)
+        # A locally hosted installer is built from this checkout. Show this
+        # checkout's version rather than a potentially older GitHub release.
+        version = app.version if local_asset_available else release_version
         return HTMLResponse(
-            _landing_page(version),
-            headers={"Cache-Control": "public, max-age=300"},
+            _landing_page(version, local_asset_available or remote_asset_available is True),
+            headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=300"},
         )
 
     @app.get("/download", name="download")
     async def download_application():
-        if executable.is_file():
+        if _is_valid_installer(executable):
             return FileResponse(
                 executable,
                 media_type="application/vnd.microsoft.portable-executable",
                 filename=DOWNLOAD_FILENAME,
-                headers={"X-Content-Type-Options": "nosniff"},
+                headers={"Cache-Control": "public, max-age=300"},
             )
-        return RedirectResponse(
-            app.state.release_download_url,
-            status_code=302,
-        )
+        _, asset_available = _latest_release_info()
+        if asset_available is not True:
+            return PlainTextResponse(
+                "The latest public release does not yet include the Windows installer. "
+                "Please try again later or check the GitHub Releases page.",
+                status_code=503,
+                headers={
+                    "Cache-Control": "no-store",
+                    "Link": "<https://github.com/davidsundayonah/research-analysis-system/releases/latest>; rel=\"help\"",
+                },
+            )
+        return RedirectResponse(app.state.release_download_url, status_code=302, headers={"Cache-Control": "no-store"})
 
     @app.get("/healthz")
     async def health():
