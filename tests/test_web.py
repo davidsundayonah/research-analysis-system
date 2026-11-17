@@ -1,7 +1,22 @@
+import tomllib
+from pathlib import Path
+
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from urllib.error import URLError
 
-from app.web import DOWNLOAD_FILENAME, LATEST_RELEASE_DOWNLOAD, create_app
+from app.web import DOWNLOAD_FILENAME, LATEST_RELEASE_DOWNLOAD, app as vercel_app, create_app
+
+
+def test_vercel_entrypoint_is_the_fastapi_download_application():
+    project_root = Path(__file__).resolve().parents[1]
+    with (project_root / "pyproject.toml").open("rb") as project_file:
+        project_config = tomllib.load(project_file)
+
+    assert project_config["tool"]["vercel"]["entrypoint"] == "app.web:app"
+    assert "fastapi==0.115.12" in project_config["project"]["dependencies"]
+    assert isinstance(vercel_app, FastAPI)
+    assert TestClient(vercel_app).get("/healthz").json() == {"status": "ok"}
 
 
 def _write_installer(path, marker=b"Inno Setup Setup Data"):
