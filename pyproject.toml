@@ -15,6 +15,9 @@ research-analysis = "app.main:main"
 [tool.vercel]
 entrypoint = "app.web:app"
 
+[tool.setuptools.packages.find]
+include = ["app", "app.*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
