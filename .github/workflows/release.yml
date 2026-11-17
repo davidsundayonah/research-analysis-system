@@ -95,7 +95,7 @@ jobs:
         run: |
           $transcript = Join-Path $env:RUNNER_TEMP "windows-build-transcript.txt"
           Start-Transcript -Path $transcript -Force
-          try { .\build_windows.ps1 -NoInstallDependencies }
+          try { .\build_windows.ps1 -PythonExe (Get-Command python.exe -ErrorAction Stop).Source -NoInstallDependencies }
           finally {
             Stop-Transcript
             New-Item -ItemType Directory -Path "dist\installer" -Force | Out-Null
