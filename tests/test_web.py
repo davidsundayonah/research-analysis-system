@@ -5,7 +5,13 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from urllib.error import URLError
 
-from app.web import DOWNLOAD_FILENAME, LATEST_RELEASE_DOWNLOAD, app as vercel_app, create_app
+from app.web import (
+    DOWNLOAD_ARCHIVE_FILENAME,
+    DOWNLOAD_FILENAME,
+    LATEST_RELEASE_DOWNLOAD,
+    app as vercel_app,
+    create_app,
+)
 
 
 def test_vercel_entrypoint_is_the_fastapi_download_application():
@@ -94,6 +100,20 @@ def test_download_uses_latest_release_when_local_build_is_not_deployed(tmp_path,
 
     assert response.status_code == 302
     assert response.headers["location"] == LATEST_RELEASE_DOWNLOAD
+    assert response.headers["location"].endswith("ResearchAnalysis_Setup.zip")
+
+
+def test_remote_download_page_explains_zip_extraction(tmp_path, monkeypatch):
+    monkeypatch.setattr("app.web._latest_release_info", lambda: ("1.0.2", True))
+    client = TestClient(create_app(tmp_path / DOWNLOAD_FILENAME))
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Download for Windows (ZIP)" in response.text
+    assert "ResearchAnalysis_Setup.zip" in response.text
+    assert "extract it" in response.text
+    assert "ResearchAnalysis_Setup.exe" in response.text
 
 
 def test_fastapi_docs_and_schema_are_disabled(tmp_path):
@@ -175,7 +195,7 @@ def _release_payload(assets):
     return json.dumps({"tag_name": "v1.0.1", "assets": assets}).encode()
 
 
-def _release_asset(name=DOWNLOAD_FILENAME):
+def _release_asset(name=DOWNLOAD_ARCHIVE_FILENAME):
     return {
         "name": name,
         "state": "uploaded",
@@ -216,7 +236,7 @@ def test_exact_uploaded_asset_must_be_publicly_reachable(monkeypatch):
         calls += 1
         if calls == 1:
             return _FakeResponse(_release_payload([_release_asset()]))
-        return _FakeResponse(headers={"Content-Disposition": f'attachment; filename="{DOWNLOAD_FILENAME}"'})
+        return _FakeResponse(headers={"Content-Disposition": f'attachment; filename="{DOWNLOAD_ARCHIVE_FILENAME}"'})
 
     monkeypatch.setattr(web, "urlopen", fake_urlopen)
     assert web._latest_release_info() == ("1.0.1", True)

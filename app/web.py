@@ -18,9 +18,10 @@ from app.version import get_application_version
 logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DOWNLOAD_FILENAME = "ResearchAnalysis_Setup.exe"
+DOWNLOAD_ARCHIVE_FILENAME = "ResearchAnalysis_Setup.zip"
 LATEST_RELEASE_DOWNLOAD = (
     "https://github.com/davidsundayonah/research-analysis-system/"
-    "releases/latest/download/ResearchAnalysis_Setup.exe"
+    "releases/latest/download/ResearchAnalysis_Setup.zip"
 )
 LATEST_RELEASE_API = (
     "https://api.github.com/repos/davidsundayonah/"
@@ -71,7 +72,7 @@ def _latest_release_info() -> tuple[str | None, bool | None]:
                 (
                     asset
                     for asset in assets
-                    if isinstance(asset, dict) and asset.get("name") == DOWNLOAD_FILENAME
+                    if isinstance(asset, dict) and asset.get("name") == DOWNLOAD_ARCHIVE_FILENAME
                 ),
                 None,
             )
@@ -101,7 +102,7 @@ def _probe_release_asset(asset: dict | None) -> bool:
     """Confirm that the exact public installer asset is downloadable anonymously."""
     if not isinstance(asset, dict):
         return False
-    if asset.get("name") != DOWNLOAD_FILENAME or asset.get("state") != "uploaded":
+    if asset.get("name") != DOWNLOAD_ARCHIVE_FILENAME or asset.get("state") != "uploaded":
         return False
     if not isinstance(asset.get("size"), int) or asset["size"] < 1024 * 1024:
         return False
@@ -112,7 +113,7 @@ def _probe_release_asset(asset: dict | None) -> bool:
     if (
         parsed_url.scheme != "https"
         or parsed_url.hostname != "github.com"
-        or not parsed_url.path.endswith("/" + DOWNLOAD_FILENAME)
+        or not parsed_url.path.endswith("/" + DOWNLOAD_ARCHIVE_FILENAME)
     ):
         return False
     try:
@@ -125,7 +126,7 @@ def _probe_release_asset(asset: dict | None) -> bool:
             if response.status not in (200, 206):
                 return False
             disposition = response.headers.get("Content-Disposition", "")
-            return DOWNLOAD_FILENAME.lower() in disposition.lower()
+            return DOWNLOAD_ARCHIVE_FILENAME.lower() in disposition.lower()
     except (HTTPError, URLError, TimeoutError, OSError):
         logger.warning("The latest GitHub installer asset could not be reached anonymously")
         return False
@@ -157,14 +158,26 @@ def _is_valid_installer(path: Path) -> bool:
         return False
 
 
-def _landing_page(version: str | None, download_available: bool = True) -> str:
+def _landing_page(
+    version: str | None,
+    download_available: bool = True,
+    archive_download: bool = False,
+) -> str:
+    download_format = "ZIP" if archive_download else "EXE"
+    download_link_text = "Download for Windows (ZIP)" if archive_download else "Download for Windows"
     download_control = (
-        '<a class="download" href="/download" aria-label="Download Research Analysis System for Windows">'
+        f'<a class="download" href="/download" aria-label="Download Research Analysis System for Windows ({download_format})">'
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
         '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/>'
-        '</svg>Download for Windows</a>'
+        f'</svg>{download_link_text}</a>'
         if download_available
         else '<span class="download download-unavailable" aria-disabled="true">Windows installer temporarily unavailable</span>'
+    )
+    installer_instructions = (
+        "Download <strong>ResearchAnalysis_Setup.zip</strong>, extract it, then open "
+        "<strong>ResearchAnalysis_Setup.exe</strong> and follow the installation wizard."
+        if archive_download
+        else "Open <strong>ResearchAnalysis_Setup.exe</strong> and follow the installation wizard."
     )
     version_label = (
         f"Version <strong>{escape(version)}</strong>"
@@ -352,7 +365,7 @@ def _landing_page(version: str | None, download_available: bool = True) -> str:
           <h2>Get started</h2>
           <ol class="steps">
             <li><span class="step-number">1</span><span>Download the Windows installer using the button above.</span></li>
-            <li><span class="step-number">2</span><span>Open <strong>ResearchAnalysis_Setup.exe</strong> and follow the installation wizard.</span></li>
+            <li><span class="step-number">2</span><span>{installer_instructions}</span></li>
             <li><span class="step-number">3</span><span>Launch Research Analysis System from the Start Menu or optional desktop shortcut.</span></li>
           </ol>
           <div class="note"><span aria-hidden="true">i</span><span><strong>Desktop application:</strong> analysis runs on your Windows computer. This website is only for product information and downloads; it does not provide browser-based research tools.</span></div>
@@ -421,7 +434,11 @@ def create_app(download_path: str | Path | None = None) -> FastAPI:
         # checkout's version rather than a potentially older GitHub release.
         version = app.version if local_asset_available else release_version
         return HTMLResponse(
-            _landing_page(version, local_asset_available or remote_asset_available is True),
+            _landing_page(
+                version,
+                local_asset_available or remote_asset_available is True,
+                archive_download=not local_asset_available,
+            ),
             headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=300"},
         )
 

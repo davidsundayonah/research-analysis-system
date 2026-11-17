@@ -116,7 +116,7 @@ The release workflow checks that the pushed version tag matches the tested sourc
 
 ## 2.2 Official download page
 
-The website is a download page only. It does not expose desktop projects, accounts, analysis, or data management in a browser. It serves `dist\installer\ResearchAnalysis_Setup.exe` when that file is present; otherwise, the download endpoint redirects to the latest GitHub release installer.
+The website is a download page only. It does not expose desktop projects, accounts, analysis, or data management in a browser. It serves `dist\installer\ResearchAnalysis_Setup.exe` when that file is present; otherwise, the download endpoint redirects to the latest stable GitHub release's `ResearchAnalysis_Setup.zip`. Extract that archive and run `ResearchAnalysis_Setup.exe` to install the application. The release includes SHA-256 checksums for both the executable and ZIP archive.
 
 ```powershell
 .venv\Scripts\python.exe -m pip install -r requirements-web.txt

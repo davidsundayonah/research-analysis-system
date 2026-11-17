@@ -171,7 +171,27 @@ jobs:
           $productVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($installer).ProductVersion
           if (-not $productVersion.StartsWith($env:APP_VERSION)) { throw "Installer ProductVersion '$productVersion' does not match $env:APP_VERSION." }
           $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  ResearchAnalysis_Setup.exe" | Set-Content -LiteralPath "dist\installer\SHA256SUMS.txt" -Encoding ascii
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = Join-Path $env:GITHUB_WORKSPACE "dist\installer\ResearchAnalysis_Setup.zip"
+          if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive -Force }
+          $zip = [System.IO.Compression.ZipFile]::Open($archive, [System.IO.Compression.ZipArchiveMode]::Create)
+          try {
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+              $zip, $installer, "ResearchAnalysis_Setup.exe", [System.IO.Compression.CompressionLevel]::Optimal
+            ) | Out-Null
+          } finally { $zip.Dispose() }
+          $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($archive)
+          try {
+            $entry = $zip.GetEntry("ResearchAnalysis_Setup.exe")
+            if (-not $entry -or $entry.Length -ne (Get-Item -LiteralPath $installer).Length) { throw "Installer ZIP does not contain the complete expected executable." }
+            $entryStream = $entry.Open()
+            $zipHasher = [System.Security.Cryptography.SHA256]::Create()
+            try { $archivedInstallerHash = [BitConverter]::ToString($zipHasher.ComputeHash($entryStream)).Replace("-", "").ToLowerInvariant() }
+            finally { $entryStream.Dispose(); $zipHasher.Dispose() }
+          } finally { $zip.Dispose() }
+          if ($archivedInstallerHash -ne $hash) { throw "Installer ZIP contents do not match the verified installer." }
+          @("$hash  ResearchAnalysis_Setup.exe", "$archiveHash  ResearchAnalysis_Setup.zip") | Set-Content -LiteralPath "dist\installer\SHA256SUMS.txt" -Encoding ascii
           python -m pip install cyclonedx-bom==8.0.1
           $sbomVenv = Join-Path $env:RUNNER_TEMP "production-sbom-environment"
           python -m venv $sbomVenv
@@ -182,7 +202,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "CycloneDX generation from the production-only environment failed." }
           $sbom = Get-Content "dist\installer\SBOM.cyclonedx.json" -Raw | ConvertFrom-Json
           if ($sbom.bomFormat -ne "CycloneDX" -or -not $sbom.components) { throw "Generated production SBOM is empty or invalid." }
-          $notes = @("# Research Analysis System v$env:APP_VERSION", "", "Authenticode signing status: **$env:SIGNING_STATUS**.", "", "SHA-256: ``$hash``", "", "The release passed the tagged Windows build, automated test suite, packaged runtime check, user-scope install and representative upgrade fixture, and elevated machine-wide install smoke tests.", "", "The 1.0.1 installer used for the upgrade exercise is a representative fixture compiled from the 1.0.2 payload; it is not a historical release.", "", "A clean Windows 11 virtual-machine test and a real operating-system restart were not performed by this workflow.")
+          $notes = @("# Research Analysis System v$env:APP_VERSION", "", "Download ``ResearchAnalysis_Setup.zip``, extract it, then run ``ResearchAnalysis_Setup.exe``.", "", "Authenticode signing status: **$env:SIGNING_STATUS**.", "", "SHA-256 checksums for the installer and ZIP archive are in ``SHA256SUMS.txt``.", "", "The release passed the tagged Windows build, automated test suite, packaged runtime check, user-scope install and representative upgrade fixture, and elevated machine-wide install smoke tests.", "", "The 1.0.1 installer used for the upgrade exercise is a representative fixture compiled from the 1.0.2 payload; it is not a historical release.", "", "A clean Windows 11 virtual-machine test and a real operating-system restart were not performed by this workflow.")
           $notes | Set-Content -LiteralPath "dist\installer\RELEASE_NOTES.md" -Encoding utf8
 
       - name: Write explicit Windows test report
@@ -259,9 +279,23 @@ jobs:
         shell: pwsh
         run: |
           $installer = (Resolve-Path "dist\installer\ResearchAnalysis_Setup.exe").Path
+          $archive = (Resolve-Path "dist\installer\ResearchAnalysis_Setup.zip").Path
           $manifest = Get-Content "dist\installer\SHA256SUMS.txt" -Raw
           $actual = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($manifest -notmatch "(?m)^$actual\s+ResearchAnalysis_Setup\.exe$") { throw "Artifact checksum verification failed." }
+          $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($manifest -notmatch "(?m)^$archiveHash\s+ResearchAnalysis_Setup\.zip$") { throw "Installer ZIP checksum verification failed." }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($archive)
+          try {
+            $entry = $zip.GetEntry("ResearchAnalysis_Setup.exe")
+            if (-not $entry -or $entry.Length -ne (Get-Item -LiteralPath $installer).Length) { throw "Installer ZIP is missing the expected executable." }
+            $entryStream = $entry.Open()
+            $zipHasher = [System.Security.Cryptography.SHA256]::Create()
+            try { $archivedInstallerHash = [BitConverter]::ToString($zipHasher.ComputeHash($entryStream)).Replace("-", "").ToLowerInvariant() }
+            finally { $entryStream.Dispose(); $zipHasher.Dispose() }
+          } finally { $zip.Dispose() }
+          if ($archivedInstallerHash -ne $actual) { throw "ZIP contents do not match the verified installer." }
           if (-not (Test-Path "dist\installer\SBOM.cyclonedx.json") -or -not (Test-Path "dist\installer\RELEASE_NOTES.md") -or -not (Test-Path "dist\installer\WINDOWS_SMOKE_TEST_REPORT.md")) { throw "A required release artifact is missing." }
 
       - name: Publish immutable verified GitHub Release
@@ -272,6 +306,7 @@ jobs:
           $notes = Get-Content "dist\installer\RELEASE_NOTES.md" -Raw
           gh release create $env:RELEASE_TAG `
             dist\installer\ResearchAnalysis_Setup.exe `
+            dist\installer\ResearchAnalysis_Setup.zip `
             dist\installer\SHA256SUMS.txt `
             dist\installer\SBOM.cyclonedx.json `
             dist\installer\WINDOWS_SMOKE_TEST_REPORT.md `
