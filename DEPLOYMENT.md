@@ -47,7 +47,7 @@ git tag v1.0.2
 git push origin v1.0.2
 ```
 
-After verification succeeds, open **Actions → Verify and release Windows installer**, select the exact immutable tag, and explicitly set **Publish the verified release publicly** to true. Review the retained verification artifact first. The publishing job rechecks the tag commit and installer checksum before creating the release. Do not move or recreate an existing tag.
+Pushing a version tag starts verification only. To reverify an existing immutable tag after a workflow fix, open **Actions → Verify and release Windows installer**, select `main`, enter the exact tag in **release_tag** (for example `v1.0.2`), and leave publishing false. After that verification run passes and its artifacts have been reviewed, dispatch again with the same tag and explicitly set **Publish the verified release publicly** to true. The publishing job rechecks the tag commit and installer checksum before creating the release. Do not move or recreate an existing tag.
 
 Review [RELEASE_ENGINEERING.md](RELEASE_ENGINEERING.md) for the dependency audit, local build notes, testing limits, signing status, and full release checklist.
 

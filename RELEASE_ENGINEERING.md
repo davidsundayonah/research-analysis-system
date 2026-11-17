@@ -50,7 +50,7 @@ The update check uses only stable GitHub Releases from the configured repository
 2. Add user-facing changes to `CHANGELOG.md` and ensure CI passes.
 3. Create and push a new immutable tag matching the version, for example `git tag v1.0.3; git push origin v1.0.3`. This starts verification only; it does not publish a public release.
 4. Review the Windows verification job, retained artifact, install logs, checksum, SBOM, test report, and release notes.
-5. When all release gates pass, dispatch **Verify and release Windows installer** on that exact tag with `publish_release=true`; satisfy any protection on the `production-release` Environment. The publishing job verifies the tag and checksum again before attaching release artifacts.
+5. If re-verification is needed after a workflow fix, dispatch **Verify and release Windows installer** on `main`, set `release_tag` to the existing immutable tag, and leave publishing false. Once that run passes and its artifacts are reviewed, dispatch it again with the same tag and `publish_release=true`; satisfy any protection on the `production-release` Environment. The publishing job verifies the tag and checksum again before attaching release artifacts.
 6. After publication, verify the public release assets and the Render website's `/`, `/download`, and `/healthz` endpoints.
 7. Website deployment uses the independent Render service described in `DEPLOYMENT.md`. The `main` branch is configured for automatic deployment, so pushing to `main` can deploy the website; desktop packaging does not deploy it.
 

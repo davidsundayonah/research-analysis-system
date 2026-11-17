@@ -1,11 +1,24 @@
 param(
     [switch]$SkipInstaller,
     [switch]$NoInstallDependencies,
-    [string]$PythonExe = (Join-Path $PSScriptRoot ".venv\Scripts\python.exe")
+    [string]$PythonExe = ""
 )
 
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path -LiteralPath $PSScriptRoot).Path
+if (-not $PythonExe) {
+    $venvPython = Join-Path $root ".venv\Scripts\python.exe"
+    if (Test-Path -LiteralPath $venvPython -PathType Leaf) {
+        $PythonExe = $venvPython
+    }
+    else {
+        $pythonCommand = Get-Command python.exe -ErrorAction SilentlyContinue
+        if (-not $pythonCommand) {
+            throw "Python was not found on PATH and the repository .venv is missing. Install 64-bit Python 3.11-3.13 or pass -PythonExe."
+        }
+        $PythonExe = $pythonCommand.Source
+    }
+}
 $PythonExe = [System.IO.Path]::GetFullPath($PythonExe)
 if (-not (Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
     throw "Python executable not found: $PythonExe. Create .venv with 64-bit Python 3.11-3.13, or pass -PythonExe."

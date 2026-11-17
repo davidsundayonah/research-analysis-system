@@ -38,3 +38,11 @@ def test_pyinstaller_explicitly_bundles_namespace_package_update_modules():
 
     assert '"app.updates"' in spec
     assert '"app.version"' in spec
+
+
+def test_windows_build_script_uses_active_python_when_repository_venv_is_absent():
+    script = (ROOT / "build_windows.ps1").read_text(encoding="utf-8")
+
+    assert '[string]$PythonExe = ""' in script
+    assert "Get-Command python.exe -ErrorAction SilentlyContinue" in script
+    assert "the repository .venv is missing" in script

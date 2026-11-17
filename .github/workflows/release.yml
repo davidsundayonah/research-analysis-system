@@ -6,6 +6,10 @@ on:
       - "v*"
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: Immutable version tag to verify or publish
+        required: false
+        type: string
       publish_release:
         description: Publish the verified release publicly (requires selecting the intended immutable version tag)
         required: true
@@ -30,7 +34,7 @@ jobs:
       - name: Check out exact tagged source
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.release_tag || github.ref }}
           fetch-depth: 0
 
       - name: Set up 64-bit Python
@@ -49,22 +53,34 @@ jobs:
 
       - name: Verify immutable version tag and source commit
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG_INPUT: ${{ inputs.release_tag }}
         run: |
-          if ($env:GITHUB_REF -notmatch '^refs/tags/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') {
+          $releaseTag = if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch" -and $env:RELEASE_TAG_INPUT) { $env:RELEASE_TAG_INPUT } else { $env:GITHUB_REF_NAME }
+          if ($releaseTag -notmatch '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') {
             throw "Release verification must run from an immutable vMAJOR.MINOR.PATCH tag."
           }
-          $tagCommit = (git rev-list -n 1 $env:GITHUB_REF_NAME).Trim()
+          $tagCommit = (git rev-list -n 1 $releaseTag).Trim()
           $checkedOut = (git rev-parse HEAD).Trim()
           if ($tagCommit -ne $checkedOut) { throw "Checkout $checkedOut differs from tag commit $tagCommit." }
           $version = python tools/windows_build_check.py
           if ($LASTEXITCODE -ne 0) { throw "Windows build preflight failed." }
-          if ($env:GITHUB_REF_NAME -ne "v$version") { throw "Tag $env:GITHUB_REF_NAME does not match project version v$version." }
-          gh release view $env:GITHUB_REF_NAME *> $null
-          if ($LASTEXITCODE -eq 0) { throw "Release $env:GITHUB_REF_NAME already exists; published releases are immutable." }
+          if ($releaseTag -ne "v$version") { throw "Tag $releaseTag does not match project version v$version." }
+          $releaseApi = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/tags/$releaseTag"
+          try {
+            $null = Invoke-RestMethod -Uri $releaseApi -Headers @{
+              Authorization = "Bearer $env:GH_TOKEN"
+              Accept = "application/vnd.github+json"
+              "X-GitHub-Api-Version" = "2022-11-28"
+            } -TimeoutSec 20 -ErrorAction Stop
+            throw "Release $releaseTag already exists; published releases are immutable."
+          } catch {
+            if (-not $_.Exception.Response -or [int]$_.Exception.Response.StatusCode -ne 404) { throw }
+          }
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "RELEASE_TAG=$releaseTag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "SOURCE_COMMIT=$checkedOut" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       - name: Run complete application tests
         id: application_tests
@@ -179,13 +195,13 @@ jobs:
           $tests = & $status '${{ steps.application_tests.outcome }}'
           $build = & $status '${{ steps.windows_build.outcome }}'
           New-Item -ItemType Directory -Path "dist\installer" -Force | Out-Null
-          @("# Windows release test report", "", "- Tag: $env:GITHUB_REF_NAME", "- Tested commit: $env:SOURCE_COMMIT", "- GitHub-hosted Windows x64: PASS", "- Python 3.13 test suite: $tests (test-results.xml)", "- PyInstaller onedir and installer build: $build (windows-build-transcript.txt)", "- Non-admin current-user install with LOCALAPPDATA absent, settings, DB, fixture upgrade, uninstall and reinstall: $user", "- Elevated machine-wide install, launch, shortcuts, uninstall and APPDATA preservation: $machine", "- Clean Windows 11 VM: NOT TESTED", "- Real OS restart: NOT TESTED", "- Authenticode status: $env:SIGNING_STATUS", "") | Set-Content -LiteralPath "dist\installer\WINDOWS_SMOKE_TEST_REPORT.md" -Encoding utf8
+          @("# Windows release test report", "", "- Tag: $env:RELEASE_TAG", "- Tested commit: $env:SOURCE_COMMIT", "- GitHub-hosted Windows x64: PASS", "- Python 3.13 test suite: $tests (test-results.xml)", "- PyInstaller onedir and installer build: $build (windows-build-transcript.txt)", "- Non-admin current-user install with LOCALAPPDATA absent, settings, DB, fixture upgrade, uninstall and reinstall: $user", "- Elevated machine-wide install, launch, shortcuts, uninstall and APPDATA preservation: $machine", "- Clean Windows 11 VM: NOT TESTED", "- Real OS restart: NOT TESTED", "- Authenticode status: $env:SIGNING_STATUS", "") | Set-Content -LiteralPath "dist\installer\WINDOWS_SMOKE_TEST_REPORT.md" -Encoding utf8
 
       - name: Retain build outputs and diagnostic reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-release-${{ github.ref_name }}
+          name: windows-release-${{ inputs.release_tag || github.ref_name }}
           path: |
             dist/installer/
             build/research_analysis/warn-research_analysis.txt
@@ -207,24 +223,36 @@ jobs:
       - name: Check out exact tag and validate it exists
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.release_tag || github.ref }}
           fetch-depth: 0
 
       - name: Verify tagged commit and release does not already exist
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG_INPUT: ${{ inputs.release_tag }}
         run: |
-          if ($env:GITHUB_REF -notmatch '^refs/tags/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') { throw "Publication requires a version tag." }
-          $tagCommit = (git rev-list -n 1 $env:GITHUB_REF_NAME).Trim()
+          $releaseTag = if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch" -and $env:RELEASE_TAG_INPUT) { $env:RELEASE_TAG_INPUT } else { $env:GITHUB_REF_NAME }
+          if ($releaseTag -notmatch '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') { throw "Publication requires an immutable version tag." }
+          $tagCommit = (git rev-list -n 1 $releaseTag).Trim()
           if ($tagCommit -ne (git rev-parse HEAD).Trim()) { throw "Publication checkout does not match the tagged commit." }
-          gh release view $env:GITHUB_REF_NAME *> $null
-          if ($LASTEXITCODE -eq 0) { throw "Release already exists and cannot be overwritten." }
+          $releaseApi = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/tags/$releaseTag"
+          try {
+            $null = Invoke-RestMethod -Uri $releaseApi -Headers @{
+              Authorization = "Bearer $env:GH_TOKEN"
+              Accept = "application/vnd.github+json"
+              "X-GitHub-Api-Version" = "2022-11-28"
+            } -TimeoutSec 20 -ErrorAction Stop
+            throw "Release $releaseTag already exists and cannot be overwritten."
+          } catch {
+            if (-not $_.Exception.Response -or [int]$_.Exception.Response.StatusCode -ne 404) { throw }
+          }
+          "RELEASE_TAG=$releaseTag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Download verified build artifacts from this workflow run
         uses: actions/download-artifact@v4
         with:
-          name: windows-release-${{ github.ref_name }}
+          name: windows-release-${{ inputs.release_tag || github.ref_name }}
           path: dist/installer
 
       - name: Reverify installer checksum and release manifest
@@ -242,11 +270,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $notes = Get-Content "dist\installer\RELEASE_NOTES.md" -Raw
-          gh release create $env:GITHUB_REF_NAME `
+          gh release create $env:RELEASE_TAG `
             dist\installer\ResearchAnalysis_Setup.exe `
             dist\installer\SHA256SUMS.txt `
             dist\installer\SBOM.cyclonedx.json `
             dist\installer\WINDOWS_SMOKE_TEST_REPORT.md `
             --verify-tag `
-            --title "Research Analysis System $env:GITHUB_REF_NAME" `
+            --title "Research Analysis System $env:RELEASE_TAG" `
             --notes $notes
